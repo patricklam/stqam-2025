@@ -1,0 +1,175 @@
+# W01, L1
+
+* what's a software failure?
+* examples from daily life
+* big famous examples
+
+* thesis of this course
+* the verification spectrum
+
+* how do we know there's a bug?
+* RIP model (mention almost in passing)
+
+https://www.fuzzingbook.org/html/Intro_Testing.html
+
+# W01, L2
+
+* how can we proactively find bugs? exploratory testing (old L05)
+
+* regressions / move fast & break things
+* automatic testing: writing unit tests
+* structure of a test
+* refactoring code to be testable, test refactoring, mock objects
+
+# W02, L3
+
+* coverage, black-box, white-box, CFGs, notion of infeasibility
+* fuzzing
+
+https://www.fuzzingbook.org/html/Fuzzer.html
+
+# W02, L4
+
+* mutation-based fuzzing
+
+https://www.fuzzingbook.org/html/MutationFuzzer.html
+
+* what makes a good test suite
+* mutation analysis
+
+https://www.fuzzingbook.org/html/MutationAnalysis.html
+
+# W03, L5
+
+* greybox fuzzing
+https://www.fuzzingbook.org/html/GreyboxFuzzer.html
+
+* fuzzing with grammars
+https://www.fuzzingbook.org/html/Grammars.html
+
+# W04
+
+Symbolic execution (old W05)
+
+* collect path conditions, use z3 to find how to enter
+* symbolic states
+
+Z3 and SMT
+Semantics of symbolic execution (W06 notes)?
+
+# W05
+
+Dynamic symbolic execution: DART and EXE (old W06)
+Concretization
+
+Address Sanitizer (e.g. shadow memory)
+
+# W06
+
+Hoare Logic
+Dafny
+- write preconditions, postconditions, invariants
+
+# W07
+
+Dafny
+
+# W08
+
+Dafny
+
+# W09
+
+Bounded model checking
+CBMC/Kani
+https://github.com/model-checking/verify-rust-std/issues/213#issuecomment-2531006855
+
+# W10
+
+real-life applications
+
+proof engineering
+https://arxiv.org/abs/2003.06458
+
+# W11
+
+concurrency
+undefined behaviour
+
+# W12
+
+metamorphic testing
+security, library upgrades
+
+leftovers:
+continuous integration, code review, filing bug reports
+
+how to debug?
+
+
+---
+
+
+# W02
+
+WHILE language
+Derivations
+Semantics (big-step, small-step) and states
+CFGs, paths
+SSA form
+
+# W03
+
+testing
+statement/branch coverage & infeasible TRs
+unit tests
+mutation testing
+
+# W04
+
+Fuzzing
+Address Sanitizer (e.g. shadow memory)
+
+# W05
+
+Symbolic Execution
+* collect path conditions, use z3 to find how to enter
+* symbolic states
+
+Z3 and SMT
+
+# W06
+
+Dynamic Symbolic Execution: DART and EXE
+Concretization
+
+# W07
+
+Semantics of Symbolic Execution
+Propositional Logic
+- validity/unsatisfiability
+- structural induction
+- normal forms
+- resolution
+- soundness and completeness
+
+# W08
+
+First Order Logic
+- models
+- inference rules
+- theories, T-satisfiability, T-validity
+
+# W09
+
+Hoare Logic
+- Hoare triples, weakest precondition, strongest postcondition
+- rule of consequence
+- derivations
+- loop invariants
+
+# W10/11
+
+Dafny
+- write preconditions, postconditions
+- write loop invariants

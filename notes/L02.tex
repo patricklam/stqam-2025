@@ -50,7 +50,43 @@ basicstyle=\ttfamily,commentstyle=\scriptsize\itshape,showstringspaces=false,bre
 
 \begin{document}
 
-\lecture{2 --- January 8, 2024}{Winter 2024}{Patrick Lam}{version 1}
+\lecture{2 --- January 8, 2025}{Winter 2025}{Patrick Lam}{version 1}
+
+\section*{Why Tests?}
+Let's start by talking about what test suites can do for you (as a developer).
+
+Reference: Kat Busch. ``A beginner's guide to automated testing.'' \\
+\url{https://hackernoon.com/treat-yourself-e55a7c522f71}
+
+Back to the situation in Lecture 1. You write some new code, and want some assurance that it works.
+Passing code review at Dropbox at the time required tests along with the code.
+
+``Lo and behold, I soon needed to fix a small bug.'' But, of course, 
+it's easy to introduce even more bugs when fixing something.
+Fortunately, she had some tests.
+
+\begin{quote}
+I ran the tests. Within a few seconds, I knew that everything still worked! Not just a single code path (as in a manual test), but all code paths for which I’d written tests! It was magical. It was so much faster than my manual testing. And I knew I didn’t forget to test any edge cases, since they were all still covered in the automated tests.
+\end{quote}
+
+Not writing tests is incurring technical debt. You'll pay for it
+later, when you have to maintain the code. Having tests
+allows you to move faster later, without worrying about breaking your
+code.
+
+\begin{quote}
+If your code is still in the codebase a year (or five) after you've
+committed it and there are no tests for it, bugs will creep in and
+nobody will notice for a long time.
+\end{quote}
+
+Writing tests is like eating your vegetables. It'll enable your code to go big and strong.
+
+\begin{quote}
+{\bf If it matters that the code works you should write a test for it.} There is no other way you can guarantee it will work.
+\end{quote}
+
+(We'll look at other ways in this course, but tests are the state of the industry.)
 
 \section*{Exploratory Testing}
 \vspace*{-1em}
@@ -178,7 +214,7 @@ Regression tests often have a low yield in terms of finding bugs (and are boring
 
 If the input is from a file, regression tests are easy to run (but should still be automatically triggered on a regular interval). There may still be a problem with validating output. We can also create special mocks that can take input from a file or other sources (e.g. scripting engines). 
 
-For UIs, the standard approach is to capture and replay events. This approach can be fragile! For example, tests may fail based on window placement or whitespace. For web applications, there is capture and replay for HTTP using Selenium. Mozilla has a project named Marionette\footnote{\url{https://developer.mozilla.org/en-US/docs/Mozilla/QA/Marionette}} that is used to test Firefox and Thunderbird; it is like Selenium but also works on Chrome elements. 
+For UIs, the standard approach is to capture and replay events. This approach can be fragile! For example, tests may fail based on window placement or whitespace. For web applications, there is capture and replay for HTTP using Selenium (see L02-extra notes). Mozilla has a project named Marionette\footnote{\url{https://developer.mozilla.org/en-US/docs/Mozilla/QA/Marionette}} that is used to test Firefox and Thunderbird; it is like Selenium but also works on Chrome elements. 
 
 \textbf{Output}
 
@@ -198,23 +234,15 @@ In the past, a frame tree with coordinates for all UI elements was created and m
 
 The problem was ``really hellish'' and the partial solution was to enable logging in the application. The logs would essentially be compared with expected logs. This became very ugly given 1300 or so test cases; distributing across different computers helped.
 
-\subsection*{Some Notes on Test Suites}
-
-\begin{itemize}[noitemsep]
-\item Sometimes it is a good idea to have 1 test case per bug fix. This can get unwieldy over time if redundant test cases are not removed.
-\item One could have tiered level of tests, which are progressively more detailed; run the high-level suite often and more detailed tests as needed.
-\item There is some interest in test case prioritization but little practical application since it is unclear how to implement it.
-\item Ensure regression tests are up-to-date. This can be a pain but is necessary since when software changes, test suits break or become incomplete. When a new software version comes out, try the old suite. 
-
-\begin{itemize}[noitemsep]
-\item If there are no failures, new tests may need to be added to test new functionality.
-\item If there are some failures, determine if software or test is broken. Tests can depend on inessential features of the output (e.g. order or text etc.).
-\end{itemize}
-
-\item Try to get rid of irrelevant tests over time. For example, if you have a bunch of tests that are related to the same bug, keep only 1 test for the bug. 
-\end{itemize}
-
 \section*{Industrial Best Practices}
+
+Some more references: 
+\begin{itemize}[noitemsep]
+\item Gerard Meszaros. \emph{xUnit Test Patterns: Refactoring Test Code}.
+\item Kent Beck. \emph{Test Driven Development: By Example}.
+\item Roy Osherove. \emph{The Art of Unit Testing: with examples in C\#}.
+\end{itemize}
+
 
 \begin{itemize}[noitemsep]
 
@@ -226,5 +254,200 @@ with one command.
 \item \textbf{Back Button:} Systems should be designed so that it's possible to roll back changes.
 \end{itemize}
 
+\section*{Unit tests}
+Unit tests are more low-level than integration tests and focus on 
+one particular ``class, module, or function''. They should execute quickly. Sometimes you 
+need to create fake inputs (or mocks) for unit tests; we'll talk about that too. You should generally
+not use an entire real input for a unit test.
+
+There are many unit testing frameworks (e.g. JUnit, NUnit), though I don't know of any dominant ones for C or C++.
+Here's an NUnit test I found on the Internet\footnote{\url{https://dzone.com/articles/the-anatomy-of-good-unit-testing}}.
+\begin{lstlisting}
+[Test]
+public void GetMinimum_UnsortedIntegerArray_ReturnsSmallestValue() 
+{   
+  var unsortedArray = new int[] {7,4,9,2,5}; // Arrange     
+  var minimum = Statistics.GetMinimum(unsortedArray); // Act     
+  Assert.AreEqual(2, minimum); // Assert 
+}
+\end{lstlisting}
+
+Note that tests have three phases: arrange, act, and assert. I could say more about good test design, but I don't think I will this term.
+
+\begin{quote}
+You'll find that writing tests as you go makes your interfaces better and makes your code more testable. If you find yourself writing something hard to test, you'll notice it early on when there's still time to improve the design.
+\end{quote}
+
+\section*{Test Doubles}
+Mock objects are a particular kind of test double. We need test doubles
+because objects collaborate with other objects, but we only want to test
+one object at a time.
+Meszaros categorizes test doubles as follows:
+\begin{itemize}[noitemsep]
+    \item dummy objects: these are not actually test doubles; they don't do anything, but just take up space in parameter lists. Are like {\tt null}, but get past nullness checks in code.
+    \item fake objects: have actual behaviour (which is correct), but somehow unsuitable for use in production; typical example is an in-memory database.
+    \item stubs: produce canned answers in response to interactions from the class under test.
+    \item mocks: like stubs, also produce canned answers. Difference: mock objects also check that the class under test makes the appropriate calls.
+    \item spies: usually wraps the real object (instead of the mock, which stubs it), and records interactions for later verification.
+\end{itemize}
+Shorter reference about test doubles: \url{martinfowler.com/articles/mocksArentStubs.html}
+
+\section*{Mock Objects}
+Before we talk about mock objects, let's look at a stub. Imagine that you have a service that
+sends out emails. You don't actually want to send out emails while you're testing. So here's
+a class that pretends to send out emails.
+\begin{lstlisting}
+public class MailServiceStub implements MailService {
+  private List<Message> messages = new ArrayList<Message>();
+  public void send (Message msg) {
+    messages.add(msg);
+  }
+  public int numberSent() {
+    return messages.size();
+  }
+}     
+\end{lstlisting}
+This stub permits \emph{state verification}, as seen in the following assert in a test:
+\begin{lstlisting}
+  assertEquals(1, mailer.numberSent());
+\end{lstlisting}
+This is state verification because it's checking the contents of
+memory (which should reflect interactions that have happened in the
+past). One could also check the recipients, contents of messages, etc.
+
+\paragraph{jMock example.} 
+Instead of state verification, we can also do behaviour verification. This is
+jMock syntax.
+\begin{lstlisting}
+class OrderInteractionTester... {
+  public void testOrderSendsMailIfUnfilled() {
+    Order order = new Order(TALISKER, 51);
+    Mock warehouse = mock(Warehouse.class);
+    Mock mailer = mock(MailService.class);
+    order.setMailer((MailService) mailer.proxy());
+
+    mailer.expects(once()).method("send");
+    warehouse.expects(once()).method("hasInventory")
+      .withAnyArguments()
+      .will(returnValue(false));
+
+    order.fill((Warehouse) warehouse.proxy());
+  }
+}
+\end{lstlisting}
+The calls to {\tt mock()} create mock objects which have the
+appropriate type.  If you are using the objects as simple dummy
+objects, calling {\tt mock()} and {\tt proxy()} is enough. Note that
+we have a real {\tt Order} object but we're giving it the fake proxy
+objects, as created by the {\tt Mock}'s {\tt proxy()} methods.
+
+We also specify the expected behaviour of the {\tt mailer} and the
+{\tt warehouse}. The test case is saying that the mailer ought to have
+{\tt send()} called on it once, and that the warehouse ought to have
+{\tt hasInventory()} called; that method should return {\tt false()}.
+
+\paragraph{EasyMock example.} Different mock object libraries have different syntax. Here's 
+another example, this time for EasyMock.
+
+\begin{lstlisting}
+@RunWith(EasyMockRunner.class)
+public class ExampleTest {
+
+  @TestSubject
+  private ClassUnderTest classUnderTest = new ClassUnderTest();
+
+  @Mock // creates a mock object
+  private Collaborator mock;
+
+  @Test
+  public void testRemoveNonExistingDocument() {
+    replay(mock);
+    classUnderTest.removeDocument("Does not exist");
+  }
+}      
+\end{lstlisting}
+Here we are testing the {\tt ClassUnderTest} and creating a mock object
+of {\tt Collaborator} type. EasyMock 2.3 reads the {\tt @Mock} annotation
+and automatically fills in a mock object of the appropriate type.
+In our test case, we call {\tt replay(mock)} to indicate that we are no
+longer recording expectations, but are instead starting the test case itself.
+In the above code, there are currently no expectations.
+
+Let's add some expectations.
+\begin{lstlisting}
+@Test
+public void testAddDocument() {
+  // ** recording phase **
+  // expect document addition
+  mock.documentAdded("Document");
+  // expect to be asked to vote for document removal, and vote for it
+  expect(mock.voteForRemoval("Document"))
+             .andReturn((byte) 42);
+  // expect document removal
+  mock.documentRemoved("Document");
+  replay(mock);
+  // ** replaying phase ** we expect the recorded actions to happen
+  classUnderTest.addDocument("New Document", new byte[0]);
+  // check that the behaviour actually happened:
+  verify(mock);
+}
+\end{lstlisting}
+Here we record the fact that the mock should be called with {\tt documentAdded}
+and a parameter "New Document". We also record that the mock's 
+{\tt voteForRemoval} method should be called, and when that happens, it should return
+value 42.
+Finally, we add a call {\tt verify()} to let EasyMock
+know that we're done and that it can go ahead and check that the expected behaviour actually happened.
+
+\section*{Flaky Tests}
+The second test engineering topic I want to talk about today is flaky tests. 
+Flaky tests are those that sometimes fail (nondeterministically).
+Flakiness is not something you want in your test cases. 
+(I have heard one defense of a flaky test: it lets you know that 
+the system has the potential to actually work.) 
+In general, flaky tests don't play well with the expectation that
+your test suite passes 100\%.
+
+Reference:\\
+Qingzhou Luo, Farah Hariri, Lamyaa Eloussi, Darko Marinov. ``An Empirical Analysis of Flaky Tests''. In Proceedings of Foundations of Software Engineering '14.
+
+\paragraph{Dealing with flaky tests.} Companies with large test suites have found mitigations
+for the flaky test suite problem. One can label known-flaky tests as flaky and automatically
+re-run them to see if they eventually pass. One can also ignore or remove flaky tests.
+But this is unsatisfactory: it takes a long time to re-run failing tests.
+
+\paragraph{Causes of flakiness.} Luo et al studied 201 fixes to flaky tests in open-source
+projects. They found that the three most common causes of fixable flaky tests were:
+\begin{enumerate}[noitemsep]
+    \item improper waits for asynchronous responses;
+    \item concurrency; and
+    \item test order dependency.
+\end{enumerate}
+
+The problem that caused flakiness for asynchronous waits was that there was typically a
+{\tt sleep()} call which didn't wait long enough for the action (perhaps a network call)
+to finish. The best practice is to use some sort of {\tt wait()} call to wait for the result
+instead of hardcoding a sleep time.
+
+Concurrency problems were what one might expect. The problem could either be in the system under
+test or in the test itself. Problems included data races, atomicity violations, and deadlocks;
+the solutions were the proper use of concurrency primitives (e.g. locks) as seen in your 
+Operating Systems course.
+
+Test order dependency problems arose when some tests expected other tests to have already
+executed (and left a side effect like a file in the filesystem). They came up especially 
+in the transition from Java 6 to Java 7 because that transition changed the (not-guaranteed)
+test execution order. The solution is to remove the dependency.
+
+\section*{Not unit tests}
+Many interesting things happen when different units interact.
+Integration tests verify end-to-end functionality. They're slower, flakier, and harder both
+to write and use. Focus on unit tests while developing code. But you eventually need
+integration tests to make sure the user sees the right hting.
+
+
+
+
+% L23, L24 from old notes
 
 \end{document}

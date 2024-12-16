@@ -1,4 +1,4 @@
-# W01, L1
+# W01, L1: Introduction
 
 * what's a software failure?
 * examples from daily life
@@ -7,28 +7,35 @@
 * thesis of this course
 * the verification spectrum
 
-* how do we know there's a bug?
+* how do we know there's a bug? (validation, and vs verification)
 * RIP model (mention almost in passing)
 
 https://www.fuzzingbook.org/html/Intro_Testing.html
 
-# W01, L2
+# W01, L2 (Jan 8)
 
+* why tests?
 * how can we proactively find bugs? exploratory testing (old L05)
 
 * regressions / move fast & break things
 * automatic testing: writing unit tests
-* structure of a test
-* refactoring code to be testable, test refactoring, mock objects
+* structure of a test/self-checking
+* state vs behaviour; mock objects
+* flaky tests
 
-# W02, L3
+# W02, L3 (Jan 13)
+
+Evaluating your tests:
 
 * coverage, black-box, white-box, CFGs, notion of infeasibility
+* refactoring code to be testable, test refactoring
 * fuzzing
 
 https://www.fuzzingbook.org/html/Fuzzer.html
 
-# W02, L4
+# W02, L4 (Jan 15)
+
+Evaluating your tests II:
 
 * mutation-based fuzzing
 
@@ -39,7 +46,63 @@ https://www.fuzzingbook.org/html/MutationFuzzer.html
 
 https://www.fuzzingbook.org/html/MutationAnalysis.html
 
-# W03, L5
+(we'll return to fuzzing in 2 months)
+
+# W03, L5 (Jan 20)
+
+
+Symbolic execution (old W05)
+
+* collect path conditions, use z3 to find how to enter
+* symbolic states
+
+Semantics of symbolic execution (W06 notes) - need for A1
+
+Z3 and SMT
+
+
+# W04 (Jan 27, 29)
+
+Dynamic symbolic execution: DART and EXE (old W06)
+Concretization
+
+Address Sanitizer (e.g. shadow memory)
+
+
+# W05 (Feb 3, 5)
+
+Hoare Logic
+Dafny
+- write preconditions, postconditions, invariants
+
+# W06 (Feb 10, 12)
+
+Dafny
+
+quiz 1
+
+# W07 (Feb 24, 26)
+
+Dafny
+
+# W08 (Mar 3, 5)
+
+# W09 (Mar 10, 12)
+
+Bounded model checking
+CBMC/Kani
+https://github.com/model-checking/verify-rust-std/issues/213#issuecomment-2531006855
+
+quiz 2
+
+# W10 (Mar 17, 19)
+
+real-life applications
+
+proof engineering
+https://arxiv.org/abs/2003.06458
+
+# W11 (Mar 24, 26)
 
 * greybox fuzzing
 https://www.fuzzingbook.org/html/GreyboxFuzzer.html
@@ -47,56 +110,11 @@ https://www.fuzzingbook.org/html/GreyboxFuzzer.html
 * fuzzing with grammars
 https://www.fuzzingbook.org/html/Grammars.html
 
-# W04
-
-Symbolic execution (old W05)
-
-* collect path conditions, use z3 to find how to enter
-* symbolic states
-
-Z3 and SMT
-Semantics of symbolic execution (W06 notes)?
-
-# W05
-
-Dynamic symbolic execution: DART and EXE (old W06)
-Concretization
-
-Address Sanitizer (e.g. shadow memory)
-
-# W06
-
-Hoare Logic
-Dafny
-- write preconditions, postconditions, invariants
-
-# W07
-
-Dafny
-
-# W08
-
-Dafny
-
-# W09
-
-Bounded model checking
-CBMC/Kani
-https://github.com/model-checking/verify-rust-std/issues/213#issuecomment-2531006855
-
-# W10
-
-real-life applications
-
-proof engineering
-https://arxiv.org/abs/2003.06458
-
-# W11
 
 concurrency
 undefined behaviour
 
-# W12
+# W12 (Mar 31, Apr 2)
 
 metamorphic testing
 security, library upgrades

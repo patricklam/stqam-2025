@@ -590,8 +590,19 @@ You'll find that writing tests as you go makes your interfaces better and makes 
   \end{center}
 \end{frame}
 
-
 \usebackgroundtemplate{\tikz\node[opacity=0.03]{\includegraphics[width=\paperwidth]{L02/Alice_par_John_Tenniel_34.png}};}
+\begin{frame}[fragile]
+  \frametitle{Things like mocks}
+  \begin{changemargin}{1cm}
+    \begin{itemize}
+      \item \alert{dummy objects}: don't do anything; are like \texttt{null} or \texttt{None}, \\ \hspace*{1em} but pass nullness checks.
+      \item \alert{fake objects}: have actual (correct) behaviour, \\ \hspace*{1em} but unsuitable for production, e.g. in-memory db.
+      \item \alert{stubs}: produce canned answers.
+      \item \alert{mocks}: produce canned answers, \\ \hspace*{1em} but also check the interaction protocol.
+    \end{itemize}
+  \end{changemargin}
+\end{frame}
+
 \begin{frame}[fragile]
   \frametitle{Mock Objects: Email Sender}
   \begin{changemargin}{1cm}

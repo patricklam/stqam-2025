@@ -1,0 +1,27 @@
+I had this version of a requester but it's more contrived than the aio version, because you can just put 'thread.wait()' and the thing will work.
+
+import http.client
+import threading
+import time
+
+def retriever():
+    global result
+    result = ''
+    connection = http.client.HTTPSConnection('git.uwaterloo.ca')
+    connection.request("GET", "/")
+    response = connection.getresponse()
+    contents = response.read()
+    result = contents.decode('utf-8', 'ignore')
+
+def network_retrieve():
+    """
+    Issue  python -m doctest thisfile.py  to run the doctests.
+
+    >>> print(network_retrieve())
+    <html><body>You are being <a href="https://git.uwaterloo.ca/users/sign_in">redirected</a>.</body></html>
+    """
+    thread = threading.Thread(target=retriever)
+    thread.start()
+    time.sleep(10)
+    return result
+

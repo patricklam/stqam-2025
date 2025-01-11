@@ -1,0 +1,84 @@
+# W01
+
+* what's a software failure?
+* examples from daily life
+* big famous examples
+
+* RIP model (mention almost in passing)
+
+* how do we know there's a bug?
+* regressions
+* how can we proactively find bugs?
+
+* how to debug?
+
+* unit tests
+* structure of a test
+
+* coverage, notion of infeasibility
+* mutation testing
+
+
+# W02
+
+WHILE language
+Derivations
+Semantics (big-step, small-step) and states
+CFGs, paths
+SSA form
+
+# W03
+
+testing
+statement/branch coverage & infeasible TRs
+unit tests
+mutation testing
+
+# W04
+
+Fuzzing
+Address Sanitizer (e.g. shadow memory)
+
+# W05
+
+Symbolic Execution
+* collect path conditions, use z3 to find how to enter
+* symbolic states
+
+Z3 and SMT
+
+# W06
+
+Dynamic Symbolic Execution: DART and EXE
+Concretization
+
+# W07
+
+Semantics of Symbolic Execution
+Propositional Logic
+- validity/unsatisfiability
+- structural induction
+- normal forms
+- resolution
+- soundness and completeness
+
+# W08
+
+First Order Logic
+- models
+- inference rules
+- theories, T-satisfiability, T-validity
+
+# W09
+
+Hoare Logic
+- Hoare triples, weakest precondition, strongest postcondition
+- rule of consequence
+- derivations
+- loop invariants
+
+# W10/11
+
+Dafny
+- write preconditions, postconditions
+- write loop invariants

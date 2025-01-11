@@ -28,7 +28,6 @@ https://www.fuzzingbook.org/html/Intro_Testing.html
 Evaluating your tests:
 
 * coverage, black-box, white-box, CFGs, notion of infeasibility
-* refactoring code to be testable, test refactoring
 * fuzzing
 
 https://www.fuzzingbook.org/html/Fuzzer.html
@@ -46,27 +45,28 @@ https://www.fuzzingbook.org/html/MutationFuzzer.html
 
 https://www.fuzzingbook.org/html/MutationAnalysis.html
 
+Operational semantics (old W02 slides)
+
 (we'll return to fuzzing in 2 months)
 
 # W03, L5 (Jan 20)
 
+AddressSanitizer (e.g. shadow memory)
 
 Symbolic execution (old W05)
 
 * collect path conditions, use z3 to find how to enter
 * symbolic states
 
-Semantics of symbolic execution (W06 notes) - need for A1
-
-Z3 and SMT
-
 
 # W04 (Jan 27, 29)
+
+Z3 and SMT
 
 Dynamic symbolic execution: DART and EXE (old W06)
 Concretization
 
-Address Sanitizer (e.g. shadow memory)
+Semantics of symbolic execution (W06 notes)
 
 
 # W05 (Feb 3, 5)
@@ -116,6 +116,8 @@ undefined behaviour
 
 # W12 (Mar 31, Apr 2)
 
+
+refactoring code for testability, refactoring tests
 metamorphic testing
 security, library upgrades
 

@@ -116,7 +116,7 @@ The fundamental graph for
 source code is the \emph{Control-Flow Graph} (CFG), which originates
 from compilers.
 
-\begin{itemize}
+\begin{itemize}[noitemsep]
 \item CFG nodes: a node represents zero or more statements;
 \item CFG edges: an edge $(s_1, s_2)$ indicates that $s_1$ may
   be followed by $s_2$ in an execution.
@@ -130,7 +130,7 @@ from compilers.
 \end{lstlisting}
 
 Recall the steps in compilation:
-\begin{itemize}
+\begin{itemize}[noitemsep]
 \item lexing: input = stream of characters, output = stream of tokens (if, while, strings)
 \item parsing: input = stream of tokens, output = concrete syntax tree
 \item construction of Abstract Syntax Tree (AST): cleans up the concrete syntax tree
@@ -732,13 +732,20 @@ Army\footnote{\url{http://techblog.netflix.com/2011/07/netflix-simian-army.html}
 
 Jeff Atwood (co-founder of StackOverflow) writes about experiences with a Chaos Monkey-like system\footnote{\url{http://blog.codinghorror.com/working-with-the-chaos-monkey/}}. Why inflict such a system on yourself? ``Sometimes you don't get a choice; the Chaos Monkey chooses you.'' In his words, software engineering benefits of the Chaos Monkey included:
 
-\begin{itemize}
+\begin{itemize}[noitemsep]
 \item    ``Where we had one server performing an essential function, we switched to two.''
 \item    ``If we didn't have a sensible fallback for something, we created one.''
 \item    ``We removed dependencies all over the place, paring down to the absolute minimum we required to run.''
 \item     ``We implemented workarounds to stay running at all times, even when services we previously considered essential were suddenly no longer available.''
 \end{itemize}
 
+\section*{Links from the Fuzzing Book}
+
+I didn't have time to incorporate this content this year, but it goes over similar content with more code.
+\begin{itemize}[noitemsep]
+  \item \url{https://www.fuzzingbook.org/html/Fuzzer.html}
+  \item \url{https://www.fuzzingbook.org/html/MutationFuzzer.html}
+\end{itemize}
 
 % TODO: modify and add content from the fuzzing book
 % https://www.fuzzingbook.org/html/Fuzzer.html

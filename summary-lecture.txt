@@ -45,11 +45,11 @@ https://www.fuzzingbook.org/html/MutationFuzzer.html
 
 https://www.fuzzingbook.org/html/MutationAnalysis.html
 
-Operational semantics (old W02 slides)
-
 (we'll return to fuzzing in 2 months)
 
 # W03, L5 (Jan 20)
+
+Operational semantics (old W02 slides)
 
 AddressSanitizer (e.g. shadow memory)
 

@@ -249,6 +249,12 @@ Observe: $\Delta 3$ not killable.
 
 \usebackgroundtemplate{}
 
+\part{Using Mutation Analysis}
+\begin{frame}
+  \partpage
+\end{frame}
+
+
 \begin{frame}
   \frametitle{Using Mutation Analysis}
 
@@ -256,9 +262,9 @@ Observe: $\Delta 3$ not killable.
   \begin{changemargin}{2em}
     Three steps:
     \begin{enumerate}
-    \item Generate mutants (usually with a tool)
-    \item Execute mutants (computationally expensive)
-    \item Classify (manual)
+    \item Generate mutants\\ ~~~(usually with a tool)
+    \item Execute mutants\\ ~~~(computationally expensive)
+    \item Classify\\ ~~~(manual)
     \end{enumerate}
     ~\\
     Then, create new test cases to kill remaining mutants.
@@ -306,5 +312,371 @@ Observe: $\Delta 3$ not killable.
 
 \end{frame}
 
+\begin{frame}
+  \frametitle{Generating Mutants}
 
-  \end{document}
+  \large
+  \begin{changemargin}{2em}
+    We said: mutation analysis is like fuzzing the test suite.\\
+    Let's do that.\\[1em]
+
+    \alert{Ground string}: A valid program (or fragment) that conforms to its grammar.\\[0.5em]
+    \alert{Mutation operator}: A rule that specifies syntactic variations of strings.\\[0.5em]
+    \alert{Mutant}: The result of one application of a mutation operator to a ground string.\\[1em]
+
+    Workflow: parse the ground string (original program), apply a mutation operator, unparse.
+  \end{changemargin}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Mutation Operators}
+
+  \large
+  \begin{changemargin}{2em}
+    Hard to get good mutation operators.\\[1em]
+    The $\Delta$s we saw applied operators: \\
+    ~~~change identifiers, change operators, insert BOMB, insert failOnZero.\\[1em]
+    Perhaps a bad operator: \\
+    ~~~``change all boolean expressions to {\sf true}''.\\[1em]
+    Research says: maybe (the right) 5 operators is enough.
+    
+  \end{changemargin}
+\end{frame}
+
+\begin{frame}
+  \frametitle{When to Apply Mutation}
+
+  \large
+  \begin{changemargin}{2em}
+    \begin{itemize}
+    \item Once at a time, to a given ground string.
+    \item Choose where to apply the operator randomly.
+    \end{itemize}
+  \end{changemargin}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Killing Mutants}
+
+  \Large
+  \begin{changemargin}{2em}
+    One could define a mutation score \\~~~(\% of mutants killed),\\
+    add tests until mutation score high enough.
+  \end{changemargin}
+\end{frame}
+
+\begin{frame}
+  \frametitle{HOWTO kill mutants}
+
+  \Large
+  \begin{changemargin}{2em}
+    So far: need differences in \emph{output} (including assertion failures).\\[1em]
+    Could relax to require changes in just the \emph{state}.
+
+    \begin{itemize}
+    \item strong mutation: fault must be reachable, infect state, and \emph{propagate} to output.
+      \item weak mutation: fault must be reachable and infect state.
+    \end{itemize}
+
+    Supposedly: about the same in practice.
+  \end{changemargin}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Example 1}
+
+  \begin{changemargin}{2em}
+\begin{alltt}
+// with mutants
+int min(int a, int b)
+\{
+  int minVal;
+  minVal = a;
+  minVal = b;               // \(\Delta 1\)
+  if (b < a) \{
+    minVal = b;
+  \}
+  return minVal;
+\}
+\end{alltt}
+~\\
+Reachability: unavoidable; infection: $b \neq a$; \\
+propagation: can't execute then case, so need $b > a$.\\[1em]
+Strong mutation test case: $a = 5, b = 7$; \\
+weak mutation: $a = 7, b = 5$.
+  \end{changemargin}
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{Example 2}
+
+  \begin{changemargin}{2em}
+\begin{alltt}
+// with mutants
+int min(int a, int b)
+\{
+  int minVal;
+  minVal = a;
+  if (b < a) \{
+  if (b < minVal) \{         // \(\Delta 3 \)
+    minVal = b;
+  \}
+  return minVal;
+\}
+\end{alltt}
+
+~\\
+This is an equivalent mutant, since \texttt{a = minVal};\\
+infection condition is ``false''.\\[1em]
+
+(Equivalence testing is generally undecidable.)
+  \end{changemargin}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Example 3}
+\begin{minipage}{.5\textwidth} 
+\begin{alltt}
+  // original
+  int foo(int x, int y) \{ 
+  if (x > 5)
+    return x + y;
+  else
+    return x;
+  \}
+\end{alltt}
+\end{minipage}\begin{minipage}{.5\textwidth}
+\begin{alltt}
+  // mutant
+  int foo(int x, int y) \{
+  if (x > 5)
+    return x - y;
+  else
+    return x;
+  \}
+\end{alltt}
+\end{minipage}
+\begin{changemargin}{2em}
+  ~\\
+  Test case $\langle 6,2 \rangle$ kills the mutant, while $\langle 6, 0 \rangle$ will not.\\[1em]
+  Once we find a mutant-killing test case, forget the mutant and keep the test case (like fuzzing).
+\end{changemargin}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Uninteresting Mutants}
+
+  \large
+  \begin{changemargin}{2em}
+    Sometimes the mutant will loop indefinitely. Use a timeout.\\[1em]
+    Other uninteresting mutants:
+    \begin{itemize}
+    \item stillborn: can't compile
+    \item trivial: killed by any input
+      \item equivalent
+    \end{itemize}
+  \end{changemargin}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Implementing Mutation Analysis}
+
+  \large
+  \begin{changemargin}{2em}
+    What mutation analysis does:
+    \begin{itemize}
+    \item mimic (and hence test for) typical mistakes;
+    \item encode knowledge re: specific kinds of effective tests: \\
+      ~~e.g. statement coverage, checking for 0.
+    \end{itemize}
+    ~\\
+    Choosing the right mutation operators is key.
+  \end{changemargin}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Mutation Analysis Tool}
+
+  \Large
+  \begin{changemargin}{2em}
+    PIT: \\
+    \begin{center} {\large
+      \url{https://pitest.org/quickstart/mutators/} } \\[1em]
+    \end{center}
+    Mutates your program, reruns your test suite, tells you how it went.\\[1em]
+    Up to you: distinguish equivalent, not-killed.
+    
+  \end{changemargin}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Exercise: Find Mutation Operators}
+
+  \begin{changemargin}{2em}
+\begin{lstlisting}
+int mutationTest(int a, b) { 
+  int x = 3 * a, y;
+  if (m > n) {
+    y = -n;
+  }
+  else if (!(a > -b)) {
+    x = a * b;
+  }
+  return x;
+}
+\end{lstlisting}
+  \end{changemargin}
+  
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Exercise: Killing Mutants}
+
+  \begin{changemargin}{2em}
+    For the \texttt{mutationTest} code on the previous slide, find a test case to kill each of these types of mutants:\\[0.5em]
+    \begin{itemize}
+\item {\bf ABS}: Absolute Value Insertion\\
+~~~{\tt x = 3 * a}
+$\Longrightarrow$ {\tt x = 3 * abs(a)}\\[.5em]
+\item {\bf ROR}: Relational Operator Replacement\\
+~~~{\tt if (m > n)} $\Longrightarrow$ {\tt if (m >= n)}\\[.5em]
+\item {\bf UOD}: Unary Operator Deletion\\
+~~~{\tt if (!(a > -b))} $\Longrightarrow$ {\tt if (a > -b)}\\[.5em]
+    \end{itemize}
+  \end{changemargin}
+\end{frame}
+
+
+\part{Is Mutation Analysis Any Good?}
+\begin{frame}
+  \partpage
+\end{frame}
+
+\begin{frame}
+  \frametitle{Paper: Are Mutants a Valid Substitute for Real Faults in Software Testing?}
+
+
+  \begin{changemargin}{2em}
+Answer: \alert{Yes!} Test suites
+that kill more mutants are also better at finding real bugs. \\[1em]
+Also identified types of bugs that then-current mutation analysis would not detect. \\[1em]
+
+\scriptsize
+Reference: René Just, Darioush Jalali, Laura Inozemtseva, Michael D. Ernst, Reid Holmes, and
+Gordon Fraser. “Are Mutants a Valid Substitute for Real Faults in Software Testing?” In Foundations of Software Engineering 2014. pp654–665. \url{http://www.linozemtseva.com/research/2014/fse/mutant_validity/}\\[1em]
+  \end{changemargin}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Mutation Effectiveness: Methodology}
+  \begin{changemargin}{2em}
+    5 open-source projects.\\
+    357 faults from these projects.\\
+    230,000 mutants (using Major mutation framework).\\[1em]
+    Can developer-written and automatically-generated test suites detect these faults?
+  \end{changemargin}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Mutation Effectiveness: Methodology}
+  \begin{changemargin}{2em}
+    For each fault:
+    \begin{itemize}
+    \item developer-written suite $T_{\mbox{bug}}$ that did not detect the fault;
+    \item extracted from the source repo a developer-written test that detects the fault, add it to $T_{\mbox{bug}}$  to obtain $T_{\mbox{fix}}$.
+    \end{itemize}
+    Question: Does $T_{\mbox{fix}}$ detect more mutants than $T_{\mbox{bug}}$?\\
+    If so, then the mutant behaves like a bug.
+
+  \end{changemargin}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Results}
+  \Large
+  \begin{changemargin}{2em}
+    Major-generated mutation could detect 73\% of the faults:\\
+    ~~~that is, for 73\% of faults, some mutant will be killed by a test that also detects the fault.\\[1em]
+    So: $\uparrow$ mutation coverage  also \\
+    \hspace*{3em}$\uparrow$ likelihood of finding faults.\\[2em]
+    
+  \end{changemargin}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Results: Branch and Statement Coverage}
+  \Large
+  \begin{changemargin}{2em}
+    Analogous numbers for branch and statement coverage: 50\%, 40\%.\\[1em]
+    The 357 tests that find faults only increase branch coverage 50\% of the time.\\[1em]
+    Improving your test suite doesn't get rewarded with a better coverage score.\\[1em]
+    Conversely, improving statement coverage doesn't help find more bugs---you're not sensitive to erroneous state.
+  \end{changemargin}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Results: Faults not found by mutants}
+  \Large
+  \begin{changemargin}{2em}
+    27\% of remaining faults were not found by mutants.\\[1em]
+    \begin{itemize}
+    \item For 10\%, better mutation operators could have helped.
+    \item Remaining 17\% not suitable for mutation analysis (algorithmic improvements or code deletion).
+    \end{itemize}
+  \end{changemargin}
+\end{frame}
+    
+
+\begin{frame}
+  \frametitle{Another Paper: Coverage is Not Strongly Correlated with Test Suite Effectiveness}
+
+  \begin{changemargin}{2em}
+  \scriptsize
+  Reference: Laura Inozemtseva and Reid Holmes.
+``Coverage is Not Strongly Correlated with Test Suite Effectiveness.''
+In {\em International Conference on Software Engineering} 2014. pp435--445.
+\url{http://www.linozemtseva.com/research/2014/icse/coverage/}
+  \end{changemargin}
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{Coverage paper summary}
+
+  \large
+  \begin{changemargin}{2em}
+Coverage does not correlate with high quality
+when it comes to test suites.\\[1em]
+
+Specifically: test suites that are larger are better because
+they are larger, not because they have higher coverage.
+  \end{changemargin}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Methodology}
+
+  \large
+  \begin{changemargin}{2em}
+    5 large programs.\\
+    Test suites: random subsets of developer-written suites.\\[1em]
+    Measured coverage \& effectiveness (\% mutants detected).
+  \end{changemargin}
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{Result}
+
+  \large
+  \begin{changemargin}{2em}
+    After controlling for suite size, \\
+    \hspace*{2em} coverage not strongly correlated with effectiveness.\\[1em]
+    Stronger coverage (e.g. branch vs statement) doesn't buy you better test suites.
+  \end{changemargin}
+
+\end{frame}
+
+  
+\end{document}

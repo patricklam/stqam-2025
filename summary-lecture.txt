@@ -38,6 +38,8 @@ Evaluating your tests II:
 
 * mutation-based fuzzing
 
+(on Jan 13 finished slide 10, though should probably do another mutation example)
+
 https://www.fuzzingbook.org/html/MutationFuzzer.html
 
 * what makes a good test suite

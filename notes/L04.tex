@@ -430,6 +430,45 @@ $\Longrightarrow$ {\tt x = 3 * abs(a)}, {\tt x = 3 * -abs(a)}, {\tt x = 3 * fail
 {\tt if (!(a > -b))} $\Longrightarrow$ {\tt if (a > -b)}, {\tt if (!(a > b))}
 \end{itemize}
 
+\section*{Making Mutation Analysis Practical}
+
+There is a paper about how to use mutation analysis in practice: Petrović et al. ``Practical Mutation Testing at Scale: A View from Google''.
+
+Problems with mutation testing (aka mutation analysis):
+  \begin{itemize}[noitemsep]
+  \item too many mutants!
+  \item too many unproductive mutants!
+  \end{itemize}
+
+To help with the ``too many mutants'' problem, solution \#1 is to (1) 
+mutate only changed (and covered) lines of code; and (2) show surviving mutants during code review.
+
+They used 5 mutation operators:
+\begin{enumerate}[noitemsep]
+\item arithmetic operator replacement
+\item     logical connector replacement
+\item     unary operator insertion
+\item     relational operator replacement
+\item     statement block removal
+\end{enumerate}
+
+Bad (unproductive) mutants are a problem, and they describe a number of heuristics to avoid bad mutants. To avoid equivalent mutants:
+\begin{itemize}[noitemsep]
+    \item detect some clearly-equivalent mutants
+      (\texttt{c.size() == 0, c.size() <= 0});
+    \item detect removal of caching;
+    \item detect time-related calls (e.g. sleep()).
+\end{itemize}
+
+And, some mutants are killable but shouldn't be, like logging calls and \texttt{mkdir}. The test suite does not need to detect changes in logging output.
+
+So, to apply mutation analysis to a proposed change set, they:
+    \begin{itemize}[noitemsep]
+    \item generate mutants for each changed line of code (max of 7x \# of files);
+    \item filter out according to heuristics; and,
+    \item probabilistically select mutants---choose those that are like past good mutants.
+    \end{itemize}
+    Developer should update their test sets accordingly.
 
 \section*{Is Mutation Analysis Any Good?}
 We've talked about mutation analysis as a metric for evaluating test

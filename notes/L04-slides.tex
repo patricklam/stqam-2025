@@ -548,6 +548,84 @@ $\Longrightarrow$ {\tt x = 3 * abs(a)}\\[.5em]
 \end{frame}
 
 
+\begin{frame}
+  \frametitle{Making Mutation Analysis Practical}
+
+  \large
+  \begin{changemargin}{2em}
+  Petrović et al. ``Practical Mutation Testing at Scale: A View from Google''.\\[1em]
+
+  Problems with mutation testing (aka mutation analysis):
+  \begin{itemize}
+  \item too many mutants!
+  \item too many unproductive mutants!
+  \end{itemize}
+  \end{changemargin}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Practicality via Incrementality}
+  \Large
+  \begin{changemargin}{2em}
+    Solution \#1: \\
+    \qquad mutate only changed (and covered) lines of code; \\
+    \qquad show surviving mutants during code review.
+  \end{changemargin}
+\end{frame}
+  
+\begin{frame}
+  \frametitle{Mutation operators used}
+  \Large
+  \begin{changemargin}{2em}
+    arithmetic operator replacement\\
+    logical connector replacement\\
+    unary operator insertion\\
+    relational operator replacement\\
+    statement block removal
+  \end{changemargin}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Heuristics to avoid bad mutants: equivalent}
+  \Large
+  \begin{changemargin}{2em}
+    \begin{itemize}
+    \item detect some clearly-equivalent mutants
+      (\texttt{c.size() == 0, c.size() <= 0})
+    \item detect removal of caching
+    \item detect time-related calls (e.g. sleep())
+    \end{itemize}
+  \end{changemargin}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Heuristics to avoid bad mutants: unproductive}
+  \Large
+  \begin{changemargin}{2em}
+    Some mutants are killable but shouldn't be:
+    \begin{itemize}
+    \item logging calls
+    \item mkdir
+    \end{itemize}
+
+    The test suite does not need to detect changes in logging output.
+  \end{changemargin}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Applying mutation testing}
+  \large
+  \begin{changemargin}{2em}
+    On a proposed change set:
+    \begin{itemize}
+    \item generate mutants for each changed line of code (max of 7x \# of files);
+    \item filter out according to heuristics;
+    \item probabilistically select mutants to choose those like past good mutants.
+    \end{itemize}
+    Developer should update their test sets accordingly.
+  \end{changemargin}
+\end{frame}
+
 \part{Is Mutation Analysis Any Good?}
 \begin{frame}
   \partpage
@@ -558,6 +636,7 @@ $\Longrightarrow$ {\tt x = 3 * abs(a)}\\[.5em]
 
 
   \begin{changemargin}{2em}
+    \large
 Answer: \alert{Yes!} Test suites
 that kill more mutants are also better at finding real bugs. \\[1em]
 Also identified types of bugs that then-current mutation analysis would not detect. \\[1em]
@@ -570,6 +649,7 @@ Gordon Fraser. “Are Mutants a Valid Substitute for Real Faults in Software Tes
 
 \begin{frame}
   \frametitle{Mutation Effectiveness: Methodology}
+  \Large
   \begin{changemargin}{2em}
     5 open-source projects.\\
     357 faults from these projects.\\
@@ -632,7 +712,6 @@ Gordon Fraser. “Are Mutants a Valid Substitute for Real Faults in Software Tes
   \frametitle{Another Paper: Coverage is Not Strongly Correlated with Test Suite Effectiveness}
 
   \begin{changemargin}{2em}
-  \scriptsize
   Reference: Laura Inozemtseva and Reid Holmes.
 ``Coverage is Not Strongly Correlated with Test Suite Effectiveness.''
 In {\em International Conference on Software Engineering} 2014. pp435--445.
@@ -644,7 +723,7 @@ In {\em International Conference on Software Engineering} 2014. pp435--445.
 \begin{frame}
   \frametitle{Coverage paper summary}
 
-  \large
+  \Large
   \begin{changemargin}{2em}
 Coverage does not correlate with high quality
 when it comes to test suites.\\[1em]
@@ -657,11 +736,11 @@ they are larger, not because they have higher coverage.
 \begin{frame}
   \frametitle{Methodology}
 
-  \large
+  \Large
   \begin{changemargin}{2em}
     5 large programs.\\
     Test suites: random subsets of developer-written suites.\\[1em]
-    Measured coverage \& effectiveness (\% mutants detected).
+    Measured coverage \& effectiveness (\%~mutants detected).
   \end{changemargin}
 
 \end{frame}
@@ -669,10 +748,11 @@ they are larger, not because they have higher coverage.
 \begin{frame}
   \frametitle{Result}
 
-  \large
+  \Large
   \begin{changemargin}{2em}
     After controlling for suite size, \\
-    \hspace*{2em} coverage not strongly correlated with effectiveness.\\[1em]
+    \hspace*{2em} coverage not strongly correlated \\
+    \hspace*{2em} with effectiveness.\\[1em]
     Stronger coverage (e.g. branch vs statement) doesn't buy you better test suites.
   \end{changemargin}
 

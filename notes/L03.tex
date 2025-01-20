@@ -190,10 +190,10 @@ We can convert the Abstract Syntax Tree into the following Control Flow Graph.
 \newpage
 \paragraph{From CFG to low-level code.}
 And we can convert the CFG into the following low-level code:
-\begin{lstlisting}
+\begin{lstlisting}[numbers=left]
     x = 5
     z = 2
-q0: if (z < 17) goto q1
+q0: if !(z < 17) goto q1
     z = z + 1
     print (x)
     goto q0

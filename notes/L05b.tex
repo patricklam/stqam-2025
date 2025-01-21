@@ -1,0 +1,205 @@
+\documentclass[11pt]{article}
+\usepackage{listings}
+\usepackage{tikz}
+\usepackage{alltt}
+\usepackage{hyperref}
+\usepackage{url}
+%\usepackage{algorithm2e}
+\usetikzlibrary{arrows,automata,shapes}
+\tikzstyle{block} = [rectangle, draw, fill=blue!20, 
+    text width=5em, text centered, rounded corners, minimum height=2em]
+\tikzstyle{bt} = [rectangle, draw, fill=blue!20, 
+    text width=1em, text centered, rounded corners, minimum height=2em]
+
+\newtheorem{defn}{Definition}
+\newtheorem{crit}{Criterion}
+\newcommand{\true}{\mbox{\sf true}}
+\newcommand{\false}{\mbox{\sf false}}
+
+\newcommand{\handout}[5]{
+  \noindent
+  \begin{center}
+  \framebox{
+    \vbox{
+      \hbox to 5.78in { {\bf Software Testing, Quality Assurance and Maintenance } \hfill #2 }
+      \vspace{4mm}
+      \hbox to 5.78in { {\Large \hfill #5  \hfill} }
+      \vspace{2mm}
+      \hbox to 5.78in { {\em #3 \hfill #4} }
+    }
+  }
+  \end{center}
+  \vspace*{4mm}
+}
+
+\newcommand{\lecture}[4]{\handout{#1}{#2}{#3}{#4}{Lecture #1}}
+\topmargin 0pt
+\advance \topmargin by -\headheight
+\advance \topmargin by -\headsep
+\textheight 8.9in
+\oddsidemargin 0pt
+\evensidemargin \oddsidemargin
+\marginparwidth 0.5in
+\textwidth 6.5in
+
+\parindent 0in
+\parskip 1.5ex
+%\renewcommand{\baselinestretch}{1.25}
+
+\usepackage{enumitem}
+
+\newtheorem{prop}{Proposition}
+\newtheorem{lemma}{Lemma}
+\usepackage{ebproof}
+\newcommand{\qedsymbol}{\rule{1ex}{1ex}}
+
+\lstset{ %
+language=Java,
+basicstyle=\ttfamily,commentstyle=\scriptsize\itshape,showstringspaces=false,breaklines=true,numbers=left}
+
+%\usepackage{fontspec}
+%\setmonofont{Cousine}[Scale=MatchLowercase]
+
+\begin{document}
+
+\lecture{5b --- January 22, 2025}{Winter 2025}{Patrick Lam}{version 1}
+
+I said I'd do a structural induction example in class since there isn't one in the notes yet.
+
+For a structure built from a grammar, we would use the grammar to provide the proof obligations for
+the structural induction. WHILE has terminals, arithmetic expressions, Boolean expressions, and
+statements.
+
+\begin{prop} All WHILE programs that do not contain any \texttt{while} statements always terminate.
+\end{prop}
+
+\paragraph{Proof.} We are going to use the big-step semantics to prove this. In particular,
+we are going to show that any \texttt{while}-less program is going to admit a finite derivation
+that finishes with some final state.
+
+A WHILE program is an \texttt{slist}, which is one or more statements. Statements may contain
+arithmetic or boolean expressions.
+
+\begin{lemma}
+  Evaluation of any boolean or arithmetic expression always yields a value and terminates.
+\end{lemma}
+
+\paragraph{Proof of lemma.} We first consider arithmetic expressions. The base case
+for these expressions are integers $n$ and variables $x$. The semantics contains rules:
+
+\[
+\begin{array}{ccc}
+  \begin{prooftree}
+  \infer0{\langle n, q \rangle \Downarrow n},
+\end{prooftree} & \textrm{ and~~ }
+\begin{prooftree}
+  \infer0{\langle x, q \rangle \Downarrow q(x)}
+\end{prooftree}
+\end{array}.
+\]
+which clearly yield values and terminate. Next, we have the three grammar rules
+that build arithmetic expressions from smaller ones: negation, parentheses, and arithmetic operators.
+For each of those, we assume that all smaller expressions yield values and terminate. I'll show the
+proof for the arithmetic operator $+$. (I went and sneakily removed division\ldots).
+\[
+  \begin{prooftree}
+    \hypo{\langle e_1, q \rangle \Downarrow n_1}
+    \hypo{\langle e_2, q \rangle \Downarrow n_2}
+  \infer2{\langle e_1 + e_2, q \rangle \Downarrow n_1 + n_2}
+  \end{prooftree}
+  .
+\]
+We assume, by induction, that $e_1$ and $e_2$ have the desired property. This derivation tree shows that if you build
+an arithmetic expression with $+$, then it also has the desired property. It would be OK to say ``similarly for
+- and *''. You should probably show at least one unary operator case too.
+\[
+  \begin{prooftree}
+    \hypo{\langle e, q \rangle \Downarrow n}
+  \infer1{\langle (e), q \rangle \Downarrow n},
+  \end{prooftree}
+  .
+\]
+Here we say that because $e$ has the property, this derivation shows that $(e)$ also yields a value and terminates.
+Unary negation is the same.
+
+For boolean expressions, the base cases are \texttt{true} and \texttt{false}, and you can quote the inference
+rules
+\[
+\begin{array}{ccc}
+  \begin{prooftree}
+  \infer0{\langle \texttt{true}, q \rangle \Downarrow \texttt{true}},
+\end{prooftree} & \textrm{ and~~ }
+\begin{prooftree}
+  \infer0{\langle \texttt{false}, q \rangle \Downarrow \texttt{false}}
+\end{prooftree}
+\end{array}.
+\]
+The relational operators rely on us having shown termination for arithmetic expressions.
+\[
+  \begin{prooftree}
+    \hypo{\langle e_1, q \rangle \Downarrow n_1}
+    \hypo{\langle e_2, q \rangle \Downarrow n_2}
+  \infer2{\langle e_1 < e_2, q \rangle \Downarrow (n_1 < n_2)}
+  \end{prooftree}
+  .
+\]
+That is, we know that $e_1$ and $e_2$ evaluate to integers, and then we apply the rule and return
+\texttt{true} if $n_1 < n_2$ and \texttt{false} otherwise.
+Finally, the boolean operators rely on the induction hypothesis.
+\[
+  \begin{prooftree}
+    \hypo{\langle e_1, q \rangle \Downarrow t_1}
+    \hypo{\langle e_2, q \rangle \Downarrow t_2}
+  \infer2{\langle t_1 \texttt{~and~} t_2, q \rangle \Downarrow (t_1 \wedge t_2)}
+  \end{prooftree}
+  .
+\]
+We assume that $e_1$ and $e_2$ evaluate to boolean values $t_1$ and $t_2$ and then we have a rule which
+yields a value for $t_1$ and $t_2$.~~\qedsymbol
+
+Returning to the proof for statements, then, we have a number of statements for which we need to prove the claim.
+The base cases for this proof are \texttt{skip}, assignment statements, and the \texttt{print\_state},
+\texttt{assert}, \texttt{assume}, and \texttt{havoc} statements. We only gave semantics for \texttt{skip} and
+assignment, so we'll not talk about the other statements either.
+
+\[
+  \begin{prooftree}
+    \hypo{\langle e, q \rangle \Downarrow n}
+  \infer1{\langle x := e, q \rangle \Downarrow q[x:=n]}
+  \end{prooftree}
+  .
+\]
+
+This is a base case for this proof because there is no statement in
+the hypothesis. We rely on the lemma to show that we can evaluate $e$
+to value $n$ and terminate. This rule shows that we can evaluate an
+assignment statement and terminate. (No more yielding a value here in
+the big-step semantics; evaluation just changes the state.)
+
+The inductive cases are the statement list \texttt{slist} and the if statement. I guess I can show them both.
+For if, we have termination because we inductively assume termination for the then and else clauses.
+
+\[
+  \begin{prooftree}
+    \hypo{\langle s_1, q \rangle \Downarrow q'}
+    \hypo{\langle e, q \rangle \Downarrow \mbox{true}}
+  \infer2{\langle \texttt{if $e$ then $s_1$ else $s_2$}, q \rangle \Downarrow q'}
+  \end{prooftree}
+  .
+  \]
+  This is the then clause. You can say ``similiarly for \texttt{else}''. We have $s_1$ terminates by induction
+  and so the \texttt{if} also terminates by this derivation.
+
+Finally, for the statement list:  
+\[
+  \begin{prooftree}
+    \hypo{\langle s_1, q \rangle \Downarrow q^1}
+    \hypo{\cdots}
+    \hypo{\langle s_n, q^{n-1} \rangle \Downarrow q^n}
+  \infer3{\langle \{ s_1 ; \cdot ;s s_n \}, q \rangle \Downarrow q^n}
+  \end{prooftree}
+  .
+  \]
+Because, inductively, all of the $s_i$ terminate, then so does the list of $s$. ~~\qedsymbol
+
+\end{document}

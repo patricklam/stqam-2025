@@ -148,19 +148,19 @@ That is, we know that $e_1$ and $e_2$ evaluate to integers, and then we apply th
 Finally, the boolean operators rely on the induction hypothesis.
 \[
   \begin{prooftree}
-    \hypo{\langle e_1, q \rangle \Downarrow t_1}
-    \hypo{\langle e_2, q \rangle \Downarrow t_2}
-  \infer2{\langle t_1 \texttt{~and~} t_2, q \rangle \Downarrow (t_1 \wedge t_2)}
+    \hypo{\langle e_1, q \rangle \Downarrow b_1}
+    \hypo{\langle e_2, q \rangle \Downarrow b_2}
+  \infer2{\langle b_1 \texttt{~and~} b_2, q \rangle \Downarrow (b_1 \wedge b_2)}
   \end{prooftree}
   .
 \]
 We assume that $e_1$ and $e_2$ evaluate to boolean values $t_1$ and $t_2$ and then we have a rule which
-yields a value for $t_1$ and $t_2$.~~\qedsymbol
+yields a value for $t_1$ and $t_2$. Should mention unary operator \texttt{not} and parenthesized expressions also. ~~\qedsymbol
 
 Returning to the proof for statements, then, we have a number of statements for which we need to prove the claim.
 The base cases for this proof are \texttt{skip}, assignment statements, and the \texttt{print\_state},
 \texttt{assert}, \texttt{assume}, and \texttt{havoc} statements. We only gave semantics for \texttt{skip} and
-assignment, so we'll not talk about the other statements either.
+assignment, so we'll not talk about the other statements here either.
 
 \[
   \begin{prooftree}
@@ -187,7 +187,7 @@ For if, we have termination because we inductively assume termination for the th
   \end{prooftree}
   .
   \]
-  This is the then clause. You can say ``similiarly for \texttt{else}''. We have $s_1$ terminates by induction
+  This is the then clause. You can say ``similarly for \texttt{else}''. We have $s_1$ terminates by induction
   and so the \texttt{if} also terminates by this derivation.
 
 Finally, for the statement list:  

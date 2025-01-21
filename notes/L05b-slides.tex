@@ -1,0 +1,342 @@
+\documentclass{beamer}
+
+% TODO: print out https://www.fuzzingbook.org/code/Intro_Testing.py
+
+\usetheme{Boadilla}
+
+%\includeonlyframes{current}
+
+\usepackage{times}
+\usefonttheme{structurebold}
+\usepackage{listings}
+
+\usepackage{pgf}
+\usepackage{tikz}
+\usepackage{alltt}
+\usepackage[normalem]{ulem}
+\usetikzlibrary{arrows}
+\usetikzlibrary{automata}
+\usetikzlibrary{shapes}
+\usepackage{amsmath,amssymb}
+\usepackage{rotating}
+\usepackage{ulem}
+
+\usetikzlibrary{arrows,automata,shapes}
+\tikzstyle{block} = [rectangle, draw, fill=blue!20, 
+    text width=5em, text centered, rounded corners, minimum height=2em]
+\tikzstyle{bt} = [rectangle, draw, fill=blue!20, 
+    text width=4em, text centered, rounded corners, minimum height=2em]
+
+\lstdefinelanguage{JavaScript}{
+  keywords={typeof, new, true, false, catch, function, return, null, catch, switch, var, if, in, while, 
+do, else, case, break},
+  keywordstyle=\color{blue}\bfseries,
+  ndkeywords={class, export, boolean, throw, implements, import, this},
+  ndkeywordstyle=\color{darkgray}\bfseries,
+  identifierstyle=\color{black},
+  sensitive=false,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  commentstyle=\color{purple}\ttfamily,
+  stringstyle=\color{red}\ttfamily,
+  morestring=[b]',
+  morestring=[b]''
+}
+
+%\setbeamercovered{dynamic}
+\setbeamertemplate{footline}[page number]{}
+\setbeamertemplate{navigation symbols}{}
+\usefonttheme{structurebold}
+
+\title{Software Testing, Quality Assurance \& Maintenance---Lecture 5b}
+\author{Patrick Lam\\University of Waterloo}
+\date{January 22, 2025}
+
+\colorlet{redshaded}{red!25!bg}
+\colorlet{shaded}{black!25!bg}
+\colorlet{shadedshaded}{black!10!bg}
+\colorlet{blackshaded}{black!40!bg}
+
+\colorlet{darkred}{red!80!black}
+\colorlet{darkblue}{blue!80!black}
+\colorlet{darkgreen}{green!80!black}
+
+\newcommand{\rot}[1]{\rotatebox{90}{\mbox{#1}}}
+\newcommand{\gray}[1]{\mbox{#1}}
+
+\newenvironment{changemargin}[1]{% 
+  \begin{list}{}{% 
+    \setlength{\topsep}{0pt}% 
+    \setlength{\leftmargin}{#1}% 
+    \setlength{\rightmargin}{1em}
+    \setlength{\listparindent}{\parindent}% 
+    \setlength{\itemindent}{\parindent}% 
+    \setlength{\parsep}{\parskip}% 
+  }% 
+  \item[]}{\end{list}}
+
+
+\usepackage{ebproof}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\part{Structural Induction Example}
+\begin{frame}
+  \partpage
+\end{frame}
+
+
+\usebackgroundtemplate{}
+\begin{frame}
+  \frametitle{How Structural Induction Works}
+  \Large
+  \begin{changemargin}{2em}
+    Our structures are defined by grammars.\\[1em]
+
+    Use the grammar to provide proof obligations for structural induction.\\[1em]
+
+    WHILE language: terminals, arithmetic expressions, Boolean expressions, statements.
+  \end{changemargin}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Goal}
+  \Large
+  \begin{changemargin}{2em}
+
+    \emph{Proposition.} All WHILE programs that do not contain any \texttt{while} statements always terminate.\\[1em]
+
+    Terminate = there is a finite derivation that finishes with some final state.\\[1em]
+
+    We'll use the big-step semantics to prove this.
+  \end{changemargin}
+\end{frame}
+
+\begin{frame}
+  \frametitle{WHILE programs}
+  \Large
+  \begin{changemargin}{2em}
+    A WHILE program is an \texttt{slist}, \\
+    which is one or more statements. \\[1em]
+
+    We need to prove the proposition for statements.\\[1em]
+
+    Statements may contain
+    arithmetic or boolean expressions.
+  \end{changemargin}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Subgoal}
+  \Large
+  \begin{changemargin}{2em}
+\emph{Lemma.}
+  Evaluation of any boolean or arithmetic expression always yields a value and terminates.
+  \end{changemargin}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Proof of Lemma}
+  \Large
+  \begin{changemargin}{2em}
+    Start with arithmetic expressions.\\[1em]
+
+    Base case: integers $n$ and variables $x$. From the semantics we have rules:
+    
+\[
+\begin{array}{ccc}
+  \begin{prooftree}
+  \infer0{\langle n, q \rangle \Downarrow n},
+\end{prooftree} & \hspace*{3em} & 
+\begin{prooftree}
+  \infer0{\langle x, q \rangle \Downarrow q(x)}
+\end{prooftree}
+\end{array}
+\]
+which clearly yield values $n$ and $q(x)$ \& terminate.
+
+  \end{changemargin}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Inductive cases for lemma: binary}
+  \begin{changemargin}{2em}
+    Rules: negation, parentheses, arithmetic.\\[1em]
+
+    Inductively assume all smaller expressions yield values \& terminate.\\[1em]
+
+    Let's see $+$.
+\[
+  \begin{prooftree}
+    \hypo{\langle e_1, q \rangle \Downarrow n_1}
+    \hypo{\langle e_2, q \rangle \Downarrow n_2}
+  \infer2{\langle e_1 + e_2, q \rangle \Downarrow n_1 + n_2}
+  \end{prooftree}
+  .
+  \]
+  By induction, $e_1$ and $e_2$ have the property.\\[1em]
+  This derivation tree shows: if you build an expr wih $+$, it also has
+  the desired property.\\[1em]
+
+  Can say ``similarly for + and *''.
+  \end{changemargin}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Inductive cases for lemma: unary}
+  \begin{changemargin}{2em}
+    Let's do $(e)$. Assume property holds for $e$. Then:
+\[
+  \begin{prooftree}
+    \hypo{\langle e, q \rangle \Downarrow n}
+  \infer1{\langle (e), q \rangle \Downarrow n},
+  \end{prooftree}
+.
+\]
+Can conclude that $(e)$ also yields a value and terminates.\\
+Unary negation is the same.
+  \end{changemargin}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Boolean Expressions}
+  \Large
+  \begin{changemargin}{2em}
+    For these expressions, base cases are \texttt{true} and \texttt{false}.\\[1em]
+    Quote the inference
+rules
+\[
+\begin{array}{ccc}
+  \begin{prooftree}
+  \infer0{\langle \texttt{true}, q \rangle \Downarrow \texttt{true}},
+\end{prooftree} & \hspace*{2em} &
+\begin{prooftree}
+  \infer0{\langle \texttt{false}, q \rangle \Downarrow \texttt{false}}
+\end{prooftree}
+\end{array}
+\]
+to conclude termination.
+
+  \end{changemargin}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Boolean Expressions: Relational Operators}
+  \Large
+  \begin{changemargin}{2em}
+    For $<$, $\le$, etc, we rely on termination for arithmetic expressions.
+\[
+  \begin{prooftree}
+    \hypo{\langle e_1, q \rangle \Downarrow n_1}
+    \hypo{\langle e_2, q \rangle \Downarrow n_2}
+  \infer2{\langle e_1 < e_2, q \rangle \Downarrow (n_1 < n_2)}
+  \end{prooftree}
+  .
+\]
+$e_1$ and $e_2$ evaluate to integers, and then we apply the rule and return
+\texttt{true} if $n_1 < n_2$ and \texttt{false} otherwise.
+  \end{changemargin}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Boolean Expressions: Boolean Operators}
+  \Large
+  \begin{changemargin}{2em}
+    For \texttt{and} and \texttt{or}, we rely on the induction hypothesis.
+\[
+  \begin{prooftree}
+    \hypo{\langle e_1, q \rangle \Downarrow b_1}
+    \hypo{\langle e_2, q \rangle \Downarrow b_2}
+  \infer2{\langle b_1 \texttt{~and~} b_2, q \rangle \Downarrow (b_1 \wedge b_2)}
+  \end{prooftree}
+  .
+\]
+By IH, $e_1$ and $e_2$ evaluate to $b_1$ and $b_2$.\\
+The quoted rule
+yields a value for $b_1 \texttt{~and~} b_2$.\\[1em]
+
+You should also mention \texttt{not} and the parenthesized $(e)$ here.~~\qedsymbol
+  \end{changemargin}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Back to Statements}
+  \Large
+  \begin{changemargin}{2em}
+The base cases for this proof are \texttt{skip}, assignment statements, and the \texttt{print\_state},
+\texttt{assert}, \texttt{assume}, and \texttt{havoc} statements. \\[1em]
+We only gave semantics for \texttt{skip} and
+assignment, so we'll not talk about the other statements here either.
+  \end{changemargin}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Base Case: Assignment Statement}
+  \Large
+  \begin{changemargin}{2em}
+\[
+  \begin{prooftree}
+    \hypo{\langle e, q \rangle \Downarrow n}
+  \infer1{\langle x := e, q \rangle \Downarrow q[x:=n]}
+  \end{prooftree}
+  .
+\]
+
+This is a base case: no statements in the hypothesis.\\[1em]
+
+Per lemma, $e$ evals to value $n$ and terminates. \\[1em]
+
+This rule shows that we can evaluate an
+assignment statement and terminate. \\
+(Big-step semantics: evaluation just changes the state.)
+  \end{changemargin}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Inductive case: if Statement}
+  
+  \Large
+  \begin{changemargin}{2em}
+Termination because we inductively assume termination for then and else clauses.
+
+\[
+  \begin{prooftree}
+    \hypo{\langle s_1, q \rangle \Downarrow q'}
+    \hypo{\langle e, q \rangle \Downarrow \mbox{true}}
+  \infer2{\langle \texttt{if $e$ then $s_1$ else $s_2$}, q \rangle \Downarrow q'}
+  \end{prooftree}
+  .
+  \]
+  $s_1$ terminates by IH
+  and so the \texttt{if} also terminates by this derivation.\\[1em]
+    ``Similiarly for \texttt{else}''.
+
+
+  \end{changemargin}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Inductive case: statement list}
+  
+  \Large
+  \begin{changemargin}{2em}
+\[
+  \begin{prooftree}
+    \hypo{\langle s_1, q \rangle \Downarrow q^1}
+    \hypo{\cdots}
+    \hypo{\langle s_n, q^{n-1} \rangle \Downarrow q^n}
+  \infer3{\langle \{ s_1 ; \cdot ;s s_n \}, q \rangle \Downarrow q^n}
+  \end{prooftree}
+  .
+  \]
+Because, inductively, all of the $s_i$ terminate, then so does the list of $s$. ~~\qedsymbol
+  \end{changemargin}
+\end{frame}
+
+  \end{document}
+

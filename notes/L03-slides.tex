@@ -236,10 +236,10 @@ do, else, case, break},
   \frametitle{Low-level Code}
 
 \begin{changemargin}{2em}
-\begin{lstlisting}
+\begin{lstlisting}[numbers=left]
     x = 5
     z = 2
-q0: if (z < 17) goto q1
+q0: if !(z < 17) goto q1
     z = z + 1
     print (x)
     goto q0

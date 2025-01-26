@@ -55,6 +55,10 @@ Operational semantics (old W02 slides)
 
 AddressSanitizer (e.g. shadow memory)
 
+## L6
+
+L05b op sem example
+
 Symbolic execution (old W05)
 
 * collect path conditions, use z3 to find how to enter
@@ -64,6 +68,7 @@ Symbolic execution (old W05)
 # W04 (Jan 27, 29)
 
 Z3 and SMT
+https://stackoverflow.com/questions/16422018/how-incremental-solving-works-in-z3
 
 Dynamic symbolic execution: DART and EXE (old W06)
 Concretization
@@ -195,3 +200,7 @@ Hoare Logic
 Dafny
 - write preconditions, postconditions
 - write loop invariants
+---
+
+notes for next time
+A1Q2: says notes but really wlang/ast.py is the better reference.

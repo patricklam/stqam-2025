@@ -79,7 +79,7 @@ do, else, case, break},
 
 \begin{document}
 
-\lecture{5 --- January 20, 2025}{Winter 2025}{Patrick Lam}{version 1}
+\lecture{5 --- January 20, 2025}{Winter 2025}{Patrick Lam}{version 2}
 
 The big topic for today is semantics. In SE 212 you saw axiomatic semantics,
 which generally are used to prove program correctness. There are other ways of
@@ -649,7 +649,7 @@ but produce useful side effects while they are executing.
 \paragraph{Digression: properties of semantics.} We talked about deterministic versus nondeterministic functions earlier. We now define deterministic semantics. A semantics is \emph{deterministic} if every program statement has at most one possible derivation in any state, i.e.
 \[ \mbox{if } \langle s, q \rangle \Downarrow q_1 \mbox{ and } \langle s, q \rangle \Downarrow q_1 \mbox{ then } q_1 = q_2. \]
 On the other side of the $\Downarrow$, we say that two statements are \emph{semantically equivalent} if we can't distinguish their output states given the same input state:
-\[ s_1 \mbox{ and } s_2 \mbox{ are semantically equivalent if } \forall q.~ \langle s_1, q \rangle \Downarrow q_1 \mbox{ and } \forall q.~ \langle s_1, q \rangle \Downarrow q_2 \mbox{ implies } q_1 = q_2. \]
+\[ s_1 \mbox{ and } s_2 \mbox{ are semantically equivalent if } \forall q.~ \langle s_1, q \rangle \Downarrow q_1 \mbox{ and } \langle s_2, q \rangle \Downarrow q_2 \mbox{ implies } q_1 = q_2. \]
 Unrolling a while loop yields a semantically equivalent statement: $\mathsf{while} ~b~ \mathsf{do} ~s$ is equivalent to $\mathsf{if } ~b~ \mathsf{then~} (s; \mathsf{while} ~b~ \mathsf{do} ~s)~ \mathsf{else~skip}$.
 
 \paragraph{Structural induction.} We have another document, L05b, which gives an example of a structural induction. Here's basically how you do it for derivation trees. To prove property $P$ on all possible derivation trees for e.g. a semantics:

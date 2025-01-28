@@ -1,0 +1,96 @@
+\documentclass[11pt]{article}
+\usepackage{listings}
+\usepackage{tikz}
+\usepackage{alltt}
+\usepackage{hyperref}
+\usepackage{url}
+%\usepackage{algorithm2e}
+\usetikzlibrary{arrows,automata,shapes}
+\tikzstyle{block} = [rectangle, draw, fill=blue!20, 
+    text width=5em, text centered, rounded corners, minimum height=2em]
+\tikzstyle{bt} = [rectangle, draw, fill=blue!20, 
+    text width=1em, text centered, rounded corners, minimum height=2em]
+
+\newtheorem{defn}{Definition}
+\newtheorem{crit}{Criterion}
+\newcommand{\true}{\mbox{\sf true}}
+\newcommand{\false}{\mbox{\sf false}}
+
+\newcommand{\handout}[5]{
+  \noindent
+  \begin{center}
+  \framebox{
+    \vbox{
+      \hbox to 5.78in { {\bf Software Testing, Quality Assurance and Maintenance } \hfill #2 }
+      \vspace{4mm}
+      \hbox to 5.78in { {\Large \hfill #5  \hfill} }
+      \vspace{2mm}
+      \hbox to 5.78in { {\em #3 \hfill #4} }
+    }
+  }
+  \end{center}
+  \vspace*{4mm}
+}
+
+\newcommand{\lecture}[4]{\handout{#1}{#2}{#3}{#4}{Lecture #1}}
+\topmargin 0pt
+\advance \topmargin by -\headheight
+\advance \topmargin by -\headsep
+\textheight 8.9in
+\oddsidemargin 0pt
+\evensidemargin \oddsidemargin
+\marginparwidth 0.5in
+\textwidth 6.5in
+
+\parindent 0in
+\parskip 1.5ex
+%\renewcommand{\baselinestretch}{1.25}
+
+\usepackage{enumitem}
+
+\newtheorem{prop}{Proposition}
+\newtheorem{lemma}{Lemma}
+\usepackage{ebproof}
+\newcommand{\qedsymbol}{\rule{1ex}{1ex}}
+
+\lstset{ %
+language=Java,
+basicstyle=\ttfamily,commentstyle=\scriptsize\itshape,showstringspaces=false,breaklines=true,numbers=left}
+
+%\usepackage{fontspec}
+%\setmonofont{Cousine}[Scale=MatchLowercase]
+
+\begin{document}
+
+\lecture{5c --- January 28, 2025}{Winter 2025}{Patrick Lam}{version 1}
+
+Here's a proof of semantic equivalence between $s_1 = \mathsf{skip}\:;\:S$
+and $s_2 = S$. From page 11 of the L05 notes, we have:
+
+\[ s_1 \mbox{ and } s_2 \mbox{ are semantically equivalent if } \forall q.~ \langle s_1, q \rangle \Downarrow q_1 \mbox{ and } \langle s_2, q \rangle \Downarrow q_2 \mbox{ implies } q_1 = q_2. \]
+
+So, if we take any $q$, and let $q'$ satisfy $\langle S, q \rangle \Downarrow q'$ for that $q'$, then we have to show that $\langle \mathsf{skip} \texttt{\:;\:} S, q \rangle \Downarrow q'$ also. (If $q'$ doesn't exist, because $S$ doesn't terminate, then there is no proof obligation).
+
+The composition rule says:
+\[
+  \begin{prooftree}
+    \hypo{\langle s_1, q \rangle \Downarrow q''}
+    \hypo{\langle s_2, q \rangle \Downarrow q'}
+  \infer2{~~\langle s_1 \texttt{\:;\:} s_2, q \rangle \Downarrow q'}
+  \end{prooftree}  \hspace*{4em} \
+  \]
+and the skip rule says:
+  \[
+  \begin{prooftree}
+  \infer0{~~\langle \textsf{skip}, q \rangle \Downarrow q}
+  \end{prooftree} 
+  \]
+
+Applying the rule for \textsf{skip} gives us $\langle \mathsf{skip}, q \rangle \Downarrow q$.
+We observe that the premises for the composition rule hold, if we substitute $s_1 = \mathsf{skip}$, $q'' = q$, and $s_2 = S$.
+We thus have the conclusion
+\[
+\langle \mathsf{skip} \texttt{\:;\:} S, q \rangle \Downarrow q',
+\]
+as required.
+\end{document}

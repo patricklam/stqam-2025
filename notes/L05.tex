@@ -79,7 +79,7 @@ do, else, case, break},
 
 \begin{document}
 
-\lecture{5 --- January 20, 2025}{Winter 2025}{Patrick Lam}{version 2}
+\lecture{5 --- January 20, 2025}{Winter 2025}{Patrick Lam}{version 3}
 
 The big topic for today is semantics. In SE 212 you saw axiomatic semantics,
 which generally are used to prove program correctness. There are other ways of
@@ -604,7 +604,8 @@ with the following derivation.
   \infer0{~~\langle 1, [p := 0]\rangle \Downarrow 1~~}
   \infer1{~~\langle x := 1, [p := 0] \rangle \Downarrow [p := 0, x := 1]~~}
   \infer2{~~\langle p:=0; x := 1, [] \rangle \Downarrow [p := 0, x := 1]~~}
-  \infer0{~~\langle n := 2, [p := 0,x := 1] \rangle \Downarrow [p := 0, x := 1, n := 2]~~}
+  \infer0{~~\langle 2, [p:= 0, x := 1] \rangle \Downarrow 2~~}
+  \infer1{~~\langle n := 2, [p := 0,x := 1] \rangle \Downarrow [p := 0, x := 1, n := 2]~~}
   \infer2{~~\langle p := 0; x := 1; n := 2, [] \rangle \Downarrow [p := 0,x:=1,n:=2]~~}
 \end{prooftree}
 \]
@@ -647,7 +648,7 @@ with these kinds of programs---reactive executions, which don't terminate,
 but produce useful side effects while they are executing.
 
 \paragraph{Digression: properties of semantics.} We talked about deterministic versus nondeterministic functions earlier. We now define deterministic semantics. A semantics is \emph{deterministic} if every program statement has at most one possible derivation in any state, i.e.
-\[ \mbox{if } \langle s, q \rangle \Downarrow q_1 \mbox{ and } \langle s, q \rangle \Downarrow q_1 \mbox{ then } q_1 = q_2. \]
+\[ \mbox{if } \langle s, q \rangle \Downarrow q_1 \mbox{ and } \langle s, q \rangle \Downarrow q_2 \mbox{ then } q_1 = q_2. \]
 On the other side of the $\Downarrow$, we say that two statements are \emph{semantically equivalent} if we can't distinguish their output states given the same input state:
 \[ s_1 \mbox{ and } s_2 \mbox{ are semantically equivalent if } \forall q.~ \langle s_1, q \rangle \Downarrow q_1 \mbox{ and } \langle s_2, q \rangle \Downarrow q_2 \mbox{ implies } q_1 = q_2. \]
 Unrolling a while loop yields a semantically equivalent statement: $\mathsf{while} ~b~ \mathsf{do} ~s$ is equivalent to $\mathsf{if } ~b~ \mathsf{then~} (s; \mathsf{while} ~b~ \mathsf{do} ~s)~ \mathsf{else~skip}$.

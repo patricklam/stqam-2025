@@ -1,0 +1,368 @@
+\documentclass[t]{beamer}
+
+\usepackage{etex}
+\usepackage{amsmath}
+\usepackage{extarrows} % write symbols over arrows
+\usepackage{stmaryrd}  % llbracket and rrbracket symbols
+\usepackage{amsfonts}  % for \mathbb
+\usepackage{amssymb}   % For \triangleq
+\usepackage{proof}     % for \infer
+\usepackage{verbatim}
+\usepackage{latexsym}
+\usepackage{color}
+\usepackage{float}
+\usepackage{url}
+\usepackage{graphicx}
+\usepackage{pifont}
+\usepackage{textpos}
+\usepackage{xcolor,colortbl}
+\usepackage{tikz}                       % to draw CFGs
+\usepackage{xspace}
+\usetikzlibrary{arrows,shapes,calc,positioning}
+\usetikzlibrary{calc,shapes.callouts,shapes.arrows,shapes.geometric,fit}
+\usepackage{listings}
+% \usepackage{showexpl}
+\usepackage{mathpartir}
+
+%\usepackage[defblank]{paralist}
+\usetheme{Madrid}
+\usecolortheme{seahorse}
+
+% Colors
+\definecolor{apricot}{RGB}{250,190,160}
+\definecolor{codebg}{RGB}{214,215,250}
+\definecolor{olive}{rgb}{0.3, 0.4, .1}
+\definecolor{fore}{RGB}{249,242,215}
+\definecolor{back}{RGB}{51,51,51}
+\definecolor{title}{RGB}{255,0,90}
+\definecolor{dgreen}{rgb}{0.,0.6,0.}
+\definecolor{gold}{rgb}{1.,0.84,0.}
+\definecolor{JungleGreen}{cmyk}{0.99,0,0.52,0}
+\definecolor{BlueGreen}{cmyk}{0.85,0,0.33,0}
+\definecolor{RawSienna}{cmyk}{0,0.72,1,0.45}
+\definecolor{Magenta}{cmyk}{0,1,0,0}
+
+% shows how to change default (blue) colours in the default beamer theme
+% found here: http://joerglenhard.wordpress.com/tag/latex/
+\definecolor{UWRed}{RGB}{145,11,46}
+\definecolor{UWPurple}{RGB}{190,51,218}
+\setbeamercolor{title}{fg=UWPurple}
+\setbeamercolor{frametitle}{fg=UWPurple}
+\setbeamercolor{structure}{fg=UWPurple}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{caption}{\raggedright\insertcaption\par}
+
+% adds logo in the footer
+\logo{\includegraphics[scale=.2]{uow_logo.jpg}}
+% don't bother me with fulsome warning messages
+\tolerance=100000
+
+\mathchardef\mhyphen="2D
+
+\title{Semantics of Symbolic Execution}
+\author{Arie Gurfinkel}
+
+\date{\today}
+
+\newcommand{\bZ}{\mathbb{Z}}
+\newcommand{\sem}[3]{\langle #1, #2 \rangle \Downarrow #3}
+\newcommand{\ssem}[4]{\langle #1, #2, #3 \rangle \Downarrow #4}
+\newcommand{\cSkip}{\textbf{skip}}
+\newcommand{\cDo}{\textbf{do}}
+\newcommand{\cWhile}{\textbf{while}}
+\newcommand{\cIf}{\textbf{if}}
+\newcommand{\cThen}{\textbf{then}}
+\newcommand{\cElse}{\textbf{else}}
+\newcommand{\cHavoc}{\textbf{havoc}}
+\renewcommand{\gets}{\mathbin{:=}}
+\newcommand{\cPrint}{\textbf{print\_state}}
+\newcommand{\seq}{\mathbin{;}}
+\newcommand{\cAssume}{\textbf{assume}}
+\newcommand{\cAssert}{\textbf{assert}}
+\newcommand{\vTrue}{\text{true}}
+\newcommand{\vFalse}{\text{false}}
+\newcommand{\cequiv}{\equiv_{con}}
+
+\begin{document}
+\large\frame{\titlepage}
+
+\begin{frame}{Preliminaries}
+  \begin{itemize}
+  \item $L$ is a set of program variables (locations)
+  \item \emph{concrete} state $q$ (a.k.a., an \emph{environment}) is a
+    map from program variables $L$ to integers $\bZ$
+  \item $Q : L \to \bZ$
+    is the set of all states.
+  \end{itemize}
+  \vfill
+  \begin{block}{Notation}
+    \begin{itemize}
+      \item $q(v)$ stands for the value of variable $v$ in state $q$
+      \item $[\;]$ stands for an empty state (no variables)
+    \item  $[x \gets u, y \gets v]$ stands for a state s.t. $x$ is $u$
+      and $y$ is $v$
+    \item $q[x\gets n]$ is a state obtained from $q$ by sub the
+      value of $x$ by $n$
+    \end{itemize}
+
+  \end{block}
+  \vfill
+\end{frame}
+
+\begin{frame}[c]{Operational Semantics: Expressions}
+  \renewcommand{\arraystretch}{2.5}
+  \scalebox{0.9}{%
+\begin{tabular}{l@{\hskip 1in}r}
+  \inferrule{ }{\sem{n}{q}{n}}{$n\in\bZ$} &
+  \inferrule{ }{\sem{v}{q}{q(v)}}{$v \in L$} \\[0.3in]
+  \inferrule{\sem{a_1}{q}{n_1}\\\sem{a_2}{q}{n_2}}{\sem{a_1 +
+  a_2}{q}{n_1 + n_2}} &
+  \inferrule{\sem{a_1}{q}{n_1}\\\sem{a_2}{q}{n_2}}{\sem{a_1 \times
+  a_2}{q}{n_1 \times n_2}} \\[0.3in]
+  \inferrule{\sem{a_1}{q}{n_1}\\\sem{a_2}{q}{n_2}}{\sem{a_1 <
+  a_2}{q}{n_1 < n_2}} &
+  \inferrule{\sem{a_1}{q}{n_1}\\\sem{a_2}{q}{n_2}}{\sem{a_1 >
+  a_2}{q}{n_1 > n_2}} \\[0.3in]
+    \inferrule{\sem{b_1}{q}{r_1}\\\sem{b_2}{q}{r_2}}{\sem{b_1 \land
+  b_2}{q}{r_1 \land r_2}} &
+    \inferrule{\sem{b_1}{q}{r_1}\\\sem{b_2}{q}{r_2}}{\sem{b_1 \lor
+  b_2}{q}{r_1 \lor r_2}}\\[0.3in]
+\end{tabular}}
+\end{frame}
+
+
+\begin{frame}[c]{Operational Semantics: Statements}
+  \renewcommand{\arraystretch}{1.5}
+  \scalebox{0.9}{%
+\begin{tabular}{lr}
+  \inferrule{ }{\sem{\cSkip}{q}{q}} &
+  \inferrule{ }{\sem{\cPrint}{q}{q}} \\[0.3in]
+  \inferrule{\sem{s_1}{q}{q''}\\\sem{s_2}{q''}{q'}}{\sem{s_1 \seq
+  s_2}{q}{q'}} &
+  \inferrule{\sem{e}{q}{n}}{\sem{x \gets e}{q}{q[x\gets n]}} \\[0.3in]
+  \inferrule{\sem{b}{q}{\vTrue}\\\sem{s_1}{q}{q'}}{\sem{\cIf\;b\;\cThen\;s_1\;\cElse\;s_2}{q}{q'}} &
+  \inferrule{\sem{b}{q}{\vFalse}\\\sem{s_2}{q}{q'}}{\sem{\cIf\;b\;\cThen\;s_1\;\cElse\;s_2}{q}{q'}}\\[0.3in]
+  \inferrule{\sem{b}{q}{\vFalse}}{\sem{\cWhile\;b\;\cDo\;s}{q}{q}} &
+                                                                     \inferrule{ }{\sem{\cHavoc\;x}{q}{q[x\gets n]}}\\[0.3in]
+
+  \inferrule{\sem{b}{q}{\vTrue}\\\sem{s\seq\cWhile\;b\;\cDo\;s}{q}{q'}}{\sem{\cWhile\;b\;\cDo\;s}{q}{q'}}
+\end{tabular}}
+\end{frame}
+
+\newcommand{\aststyle}[1]{\textsf{#1}}
+\newcommand{\Plus}{\aststyle{Plus}}
+\newcommand{\Times}{\aststyle{Times}}
+\newcommand{\Lt}{\aststyle{Lt}}
+\newcommand{\Gt}{\aststyle{Gt}}
+\newcommand{\TAnd}{\aststyle{And}}
+\newcommand{\TOr}{\aststyle{Or}}
+
+
+\begin{frame}{Symbolic States and Path Conditions}
+  \begin{itemize}
+  \item A \emph{symbolic state} (or symbolic environment) $q$ is a map
+    from program variables to \emph{symbolic expressions}
+  \item A \emph{path condition} is a formula over symbolic expressions
+  \item A \emph{judgment} in symbolic execution has a form
+    \[\sem{s}{q, pc}{q',pc'}\] where $s$ is a statement, $q$ and $q'$
+    are the input and output symbolic environments, respectively, and
+    $pc$ and $pc'$ are input and output path conditions, respectively
+  \end{itemize}
+  \begin{block}{}
+    A path condition $pc'$ is \emph{satisfiable} iff there is a
+    concrete input state $c$ and concrete output state $c'$ such
+    that $s$ started in state $c$ reaches state $c'$, i.e.,
+    $\sem{s}{c}{c'}$
+    \end{block}
+\end{frame}
+
+\begin{frame}[c]{Symbolic Semantics: Expressions}
+  \renewcommand{\arraystretch}{2.5}
+  \scalebox{0.9}{%
+\begin{tabular}{l@{\hskip 1in}r}
+  \inferrule{ }{\sem{n}{q}{n}}{$n\in\bZ$} &
+  \inferrule{ }{\sem{v}{q}{q(v)}}{$v \in L$} \\[0.3in]
+  \inferrule{\sem{a_1}{q}{n_1}\\\sem{a_2}{q}{n_2}}{\sem{a_1 +
+  a_2}{q}{\Plus(n_1,n_2)}} &
+  \inferrule{\sem{a_1}{q}{n_1}\\\sem{a_2}{q}{n_2}}{\sem{a_1 \times
+  a_2}{q}{\Times(n_1, n_2)}} \\[0.3in]
+  \inferrule{\sem{a_1}{q}{n_1}\\\sem{a_2}{q}{n_2}}{\sem{a_1 <
+  a_2}{q}{\Lt(n_1, n_2)}} &
+  \inferrule{\sem{a_1}{q}{n_1}\\\sem{a_2}{q}{n_2}}{\sem{a_1 >
+  a_2}{q}{\Gt(n_1, n_2)}} \\[0.3in]
+    \inferrule{\sem{b_1}{q}{r_1}\\\sem{b_2}{q}{r_2}}{\sem{b_1 \land
+  b_2}{q}{\TAnd(r_1, r_2)}} &
+    \inferrule{\sem{b_1}{q}{r_1}\\\sem{b_2}{q}{r_2}}{\sem{b_1 \lor
+  b_2}{q}{\TOr(r_1, r_2)}}\\[0.3in]
+\end{tabular}}
+\end{frame}
+
+\begin{frame}[c]{Symbolic Semantics: Statements (1/2)}
+  \renewcommand{\arraystretch}{1.5}
+\begin{tabular}{l}
+  \inferrule{ }{\sem{\cSkip}{q,pc}{q,pc}} \\[0.3in]
+  \inferrule{ }{\sem{\cPrint}{q,pc}{q,pc}} \\[0.3in]
+  \inferrule{\sem{s_1}{q,pc}{q'',pc''}\\\sem{s_2}{q'',pc''}{q',pc'}}{\sem{s_1 \seq s_2}{q,pc}{q',pc'}}\\[0.3in]
+  \inferrule{\sem{e}{q}{r}}{\sem{x \gets e}{q,pc}{q[x\gets r],pc}} \\[0.3in]
+  \inferrule{ \text{$R$ is a fresh symbolic constant}}{\ssem{\cHavoc\;x}{q}{pc}{q[x\gets R],pc}}
+\end{tabular}
+\end{frame}
+
+\begin{frame}[c]{Symbolic Semantics: Statements (2/2)}
+  \renewcommand{\arraystretch}{1.5}
+\begin{tabular}{l}
+    \inferrule{\sem{b}{q}{r}\\ pc \land r \text{ is SAT}\\\sem{s_1}{q,pc \land r}{q',pc'}}{\sem{\cIf\;b\;\cThen\;s_1\;\cElse\;s_2}{q,pc}{q',pc'}} \\[0.3in]
+  %
+  \inferrule{\sem{b}{q}{r}\\ pc \land \neg r \text{ is
+  SAT}\\\sem{s_2}{q,pc \land \neg r}{q',pc'}}{\sem{\cIf\;b\;\cThen\;s_1\;\cElse\;s_2}{q,pc}{q',pc'}} \\[0.3in]
+  %
+  %
+  \inferrule{\sem{b}{q}{r}\\pc\land\neg r\text{ is
+  SAT}}{\sem{\cWhile\;b\;\cDo\;s}{q,pc}{q,pc\land \neg r}} \\[0.3in]
+  \inferrule{\sem{b}{q}{r}\\ pc\land r\text{ is
+  SAT}\\\sem{s\seq\cWhile\;b\;\cDo\;s}{q,pc\land r}{q',pc'}}{\sem{\cWhile\;b\;\cDo\;s}{q,pc}{q',pc'}}
+                                    \\[0.3in]
+\end{tabular}
+\end{frame}
+
+\begin{frame}{Concolic Semantics: Notation}
+  \begin{itemize}
+    \item Program variables $L$ are
+      partitioned into symbolic and concrete
+      \begin{align*}Sym(L) &= \text{symbolic} & Con(L) &= \text{concrete} \end{align*}\\\vfill
+    \item Possibly there are no symbolic (or concrete) variables\\\vfill
+    \item $Sym(a)$ and $Con(a)$ indicates whether a given variable $a$ is symbolic or
+      concrete, respectively.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Concolic States}
+  \begin{itemize}
+  \item A concolic state is a triple
+    \[q = \langle c, s, pc \rangle\] where $c$ is concrete,
+    $s$ is symbolic, and $pc$ is a path condition
+    \begin{align*} con(q) &= c &  sym(q) &= s & pc(q)&= pc \end{align*}
+\\\vfill
+  \item every variable $v$ in $sym(q)$ has a \emph{concrete shadow}
+    $con(q)(v)$. That is, concrete state can evaluate all variables
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Equivalence and containment}
+  \begin{block}{Equivalence of concrete states}
+    Two concrete states $c_1$ and $c_2$ are equivalent,
+    $c_1 \cequiv c_2$, whenever they agree on concrete variables:
+    \[
+      c_1 \cequiv c_2 \iff \forall a \in Con(L) \cdot c_1(a) = c_2(a)
+    \]
+  \end{block}
+  \vfill
+  \begin{block}{Containment of concrete states}
+    $c \models \langle s, pc \rangle$ means that concrete
+    $c$ is contained in symbolic $\langle s, pc \rangle$
+  \end{block}
+\end{frame}
+
+\begin{frame}{Concolic Semantics of Expressions}
+  %\setlength{\plitemsep}{50pt}
+  \begin{itemize}
+  \item The semantics of expressions is as usual with variables
+    evaluated based on their kind: concrete variables are evaluated
+    over $con(q)$ and symbolic over $sym(q)$:
+\[
+\begin{array}{ll}
+\inferrule{con(a) \\ \sem{a}{con(q)}{v}}{\sem{a}{q}{v}}&
+\inferrule{sym(a) \\ \sem{a}{sym(q)}{v}}{\sem{a}{q}{v}}
+\end{array}
+\]
+\\\vfill
+
+\item Expressions that do not depend on symbolic variables are
+  evaluated concretely
+\\\vfill
+
+\item Expressions that depend on symbolic variables are evaluated
+  symbolically (i.e., their value is some AST)
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Concolic Semantics: Simple Statements}
+For most statements, the semantics is extended by applying both
+symbolic and concrete operational semantics in parallel:
+
+\vspace{0.3in}
+\[
+  \inferrule{\sem{s}{con(q)}{c}\\\sem{s}{sym(q),pc(q)}{s',pc'}\\c\models\langle
+  s', pc' \rangle}%
+  {\sem{s}{q}{\langle c, s', pc' \rangle} }
+\]
+\vspace{0.3in}
+
+The last pre-condition ensures that the concrete and symbolic states
+are chosen consistently.
+\end{frame}
+
+\begin{frame}{Concolic Semantics: Assignment}
+Assignment of values to concrete variables is limited to concrete
+values only:
+\vspace{0.2in}
+\[
+  \inferrule{\sem{e}{q}{n}\\con(x)\\n\in\mathbb{Z}}{\sem{x \gets e}{q}{q[x\gets n]}}
+\]
+\vspace{0.2in}
+\begin{itemize}
+\item It is not possible to assign symbolic variables (or symbolic
+expressions) to concrete variables!
+
+\item To assign a symbolic value to a concrete variable either
+  \begin{itemize}
+  \item \hspace{2pt} make concrete variable symbolic (always easy to do), or
+  \item \hspace{2pt} make symbolic value concrete (described later on)
+  \end{itemize}
+
+\item Assignment to symbolic variables also assigns to their concrete shadows.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Concolic Semantics: If-statement}
+At if-statement, concolic execution can chose to switch to the branch
+that is not consistent with current concrete state, as long as the
+concrete state can be adjusted. We only show one of the cases:
+\vspace{0.2in}
+\[
+  \inferrule{\sem{b}{con(q)}{\vTrue}\\
+    \sem{b}{q}{r}\\ pc(q) \land \neg r \text{ is
+      SAT}\\c \models
+    \langle sym(q), pc(q) \land \neg r\rangle\\ c \cequiv
+    con(q)\\\sem{s_2}{\langle c, sym(q), pc(q) \land\neg r \rangle}{q'}}%
+  {\sem{\cIf\;b\;\cThen\;s_1\;\cElse\;s_2}{q}{q'}}
+\]
+
+\end{frame}
+
+\begin{frame}{Concolic Semantics: Concretization}
+  \emph{Concretization} turns symbolic variables (or values) into the
+  values of their concrete shadows.  The choice of concretization is
+  captured in a \emph{concretization constraints} in the path
+  condition:
+  \vspace{0.2in}
+  \[
+  \inferrule{ sym(x) \\ \sem{x}{con(q)}{n} \\ \sem{x}{sym(q)}{r}\\\sem{s}{\langle con(q),
+      sym(q)[x\gets n], pc(q)\land r=n \rangle}{q'}}%
+  {
+    \sem{s}{q}{q'}
+  }
+\]
+
+\vspace{0.2in} That is, if $x$ is a symbolic variable with symbolic
+value $r$ and it is currently shadowed concretely by a concrete value
+$n$, then its value can be concretized to $n$ as long as the
+path condition is updated with $r=n$ to reflect the concretization
+
+\end{frame}
+
+\end{document}
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

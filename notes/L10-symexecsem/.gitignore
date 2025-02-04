@@ -1,0 +1,7 @@
+main.nav
+main.snm
+main.toc
+
+*.fls
+*.fdb_latexmk
+L10-symexecsem.pdf

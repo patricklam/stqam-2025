@@ -62,7 +62,7 @@ basicstyle=\ttfamily,commentstyle=\scriptsize\itshape,showstringspaces=false,bre
 
 \begin{document}
 
-\lecture{5c --- January 28, 2025}{Winter 2025}{Patrick Lam}{version 1}
+\lecture{5c --- January 28, 2025}{Winter 2025}{Patrick Lam}{version 2}
 
 Here's a proof of semantic equivalence between $s_1 = \mathsf{skip}\:;\:S$
 and $s_2 = S$. From page 11 of the L05 notes, we have:
@@ -75,7 +75,7 @@ The composition rule says:
 \[
   \begin{prooftree}
     \hypo{\langle s_1, q \rangle \Downarrow q''}
-    \hypo{\langle s_2, q \rangle \Downarrow q'}
+    \hypo{\langle s_2, q'' \rangle \Downarrow q'}
   \infer2{~~\langle s_1 \texttt{\:;\:} s_2, q \rangle \Downarrow q'}
   \end{prooftree}  \hspace*{4em} \
   \]

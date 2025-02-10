@@ -1,4 +1,5 @@
 \documentclass[11pt]{article}
+\usepackage{multicol}
 \usepackage{listings}
 \usepackage{pgf}
 \usepackage{tikz}
@@ -656,23 +657,35 @@ that a different branch run, yielding new inputs that cover new execution paths.
 
 We can repeat the concrete run/adjust input loop until we run out of time, or (ha, ha) we find all bugs.
 
-Here's some pseudocode.
-\begin{lstlisting}[escapeinside={(*}{*)}]
-  formula Seen := False
-  while (*$\neg$*)Seen is satisfiable do
-    find input (*$x$*) that satisfies (*$\neg$*)Seen
-    execute (*$P(x)$*) and record path condition (*$C$*)
-    // important: (*$x$*) satisfies (*$C$*)
-    Seen := Seen (*$\vee$*) (*$C$*) // record (*$C$*) as seen
-  done
-\end{lstlisting}
-Here:
-\begin{itemize}[noitemsep]
-\item \texttt{Seen} is a formula, recording what path conditions we've seen
-\item $P$ is the program
-\item $x$ is a program input (one or multiple values; command-line parameters, input files, etc\ldots)
-\item $C$ is a path condition, computed using symbolic execution, based on the program path induced by input $x$
-\end{itemize}
+There is pseudocode in the slides, but I think Wikipedia's description\footnote{\url{https://en.wikipedia.org/wiki/Concolic_testing}} is actually more clear, and I'll excerpt it here. It's not exactly what we do, since we have both symbolic and concrete values for variables sometimes.
+\begin{enumerate}[noitemsep]
+\item    Classify a particular set of variables as \emph{input variables}. These variables will be treated as symbolic variables during symbolic execution. All other variables will be treated as concrete values.
+\item    Instrument the program so that each operation which may affect a symbolic variable value or a path condition is logged to a trace file, as well as any error that occurs.
+\item    Choose an arbitrary input to begin with.
+\item    Execute the program.
+\item    Symbolically re-execute the program on the trace, generating a set of symbolic constraints (including path conditions).
+\item    Negate the last path condition not already negated in order to visit a new execution path. If there is no such path condition, the algorithm terminates.
+\item    Invoke an automated satisfiability solver [SMT solver] on the new set of path conditions to generate a new input. If there is no input satisfying the constraints, return to step 6 to try the next execution path.
+\item    Return to step 4.
+\end{enumerate}
+
+%% Here's some pseudocode.
+%% \begin{lstlisting}[escapeinside={(*}{*)}]
+%%   formula Seen := False
+%%   while (*$\neg$*)Seen is satisfiable do
+%%     find input (*$x$*) that satisfies (*$\neg$*)Seen
+%%     execute (*$P(x)$*) and record path condition (*$C$*)
+%%     // important: (*$x$*) satisfies (*$C$*)
+%%     Seen := Seen (*$\vee$*) (*$C$*) // record (*$C$*) as seen
+%%   done
+%% \end{lstlisting}
+%% Here:
+%% \begin{itemize}[noitemsep]
+%% \item \texttt{Seen} is a formula, recording what path conditions we've seen
+%% \item $P$ is the program
+%% \item $x$ is a program input (one or multiple values; command-line parameters, input files, etc\ldots)
+%% \item $C$ is a path condition, computed using symbolic execution, based on the program path induced by input $x$
+%% \end{itemize}
 
 Let's run through the same program as from EXE again. I don't need to show the concrete execution step-by-step; DART runs it all through, anyway. We are again starting with input \texttt{x = 1}, i.e.
 test case \texttt{proc(1)}.
@@ -858,6 +871,424 @@ with what we had before to get $X > 8 \wedge X \ge 5$. The last possible path co
 might explore is from negating $X \ge 5$ to yield $X > 8 \wedge X < 5$, but the SMT solver
 tells us that this is unsatisfiable~($\times$), so we are done, and we once again have the inputs
 $9, 1, 6$, a.k.a. test cases \texttt{proc(9)}, \texttt{proc(1)}, and \texttt{proc(6)}.
+
+\subsection*{A Second DART Example}
+Let's now look at this code, which looks a bit more realistic.
+\begin{lstlisting}
+  void CoverMe(int [] a) {
+    if (a == null) return;
+      if (a.Length > 0)
+        if (a[0] == 1234567890)
+          throw new Exception("bug");
+  }
+\end{lstlisting}
+Note again the reliance on exceptions to indicate bugs. We are trying to manufacture the non-empty
+array with element 0 containing 1234567890. We start with input \texttt{null} for \texttt{a} and observe
+path constraint \texttt{a == null}.
+
+\begin{center}
+\begin{tabular}{l|l|l}
+  Constraints to Solve & Input & Observed constraints\\ \hline
+   & \texttt{null} & \texttt{a == null}
+\end{tabular}
+\end{center}
+
+We then negate the observed path constraint to get \texttt{a != null}, which we pass to the SMT solver. It creates
+empty array \texttt{[]}. (It could create any array, but it's usually going to choose the simplest one first, unless you
+force it not to.) At this point we have the constraint tree:
+
+\begin{center}
+  \begin{tabular}{ll}
+    \begin{minipage}{.3\textwidth}
+      \begin{center}
+\begin{tikzpicture}[
+        node distance=1.5cm and 1cm,
+        every node/.style={draw, rounded corners, fill=gray!10, align=center},
+        every path/.style={thick},
+        decision/.style={draw, rounded corners, fill=gray!20, align=center, minimum width=3.5cm, yshift=2em}
+    ]
+
+
+  % Nodes
+  \node (start) {\texttt{a == null}};
+  \node (left) [below left=of start, text width=0.1em,yshift=2em] {};
+  \node (right) [below right=of start, text width=0.1em,yshift=2em] {};
+
+  \draw[->] (start) -- (right);
+  \draw[->,dotted] (start) -- (left);
+\end{tikzpicture}
+      \end{center}
+    \end{minipage}
+&
+    \begin{minipage}{.45\textwidth}
+\begin{tabular}{l|l|l}
+  Constraints to Solve & Input & Observed constraints\\ \hline
+   & \texttt{null} & \texttt{a == null}\\ \hline
+\texttt{a != null} & \texttt{[]}
+\end{tabular}
+    \end{minipage}
+  \end{tabular}
+\end{center}
+We execute and monitor the function with input \texttt{a = []} and observe a new constraint
+\texttt{a.Length > 0}, which evaluates to false on our input.
+We once again negate the path condition to yield constraint \texttt{a != null \&\& a.Length > 0}.
+We ask the SMT solver to solve that constraint and get \texttt{a = [0]}.
+
+\begin{center}
+  \begin{tabular}{ll}
+    \begin{minipage}{.4\textwidth}
+      \begin{center}
+\begin{tikzpicture}[
+        node distance=.5cm and .5cm,
+        every node/.style={draw, rounded corners, fill=gray!10, align=center},
+        every path/.style={thick},
+        decision/.style={draw, rounded corners, fill=gray!20, align=center, minimum width=3.5cm, yshift=2em}
+    ]
+
+
+  % Nodes
+  \node (start) {\texttt{a == null}};
+  \node (left) [below left=of start] {\texttt{a.Length > 0}};
+  \node (left1a) [below left=of left,xshift=1cm] {};
+  \node (left1b) [below right=of left] {};
+  \node (right) [below right=of start, text width=0.1em,xshift=-1cm] {};
+
+  \draw[->] (start) -- (right);
+  \draw[->,dotted] (start) -- (left);
+  \draw[->] (left) -- (left1a);
+  \draw[->,dotted] (left) -- (left1b);
+\end{tikzpicture}
+\end{center}
+    \end{minipage}
+    &
+    \begin{minipage}{.45\textwidth}
+\begin{tabular}{l|l|l}
+  Constraints to Solve & Input & Observed constraints\\ \hline
+   & \texttt{null} & \texttt{a == null}\\ \hline
+  \texttt{a != null} & \texttt{[]} & \texttt{a != null}\\ 
+  && ~~~ \texttt{\&\& !(a.Length>0)}\\ \hline
+  \texttt{a != null \&\&} & \texttt{[0]} & \\
+  ~~~ \texttt{a.Length > 0} &&
+\end{tabular}
+    \end{minipage}
+  \end{tabular}
+\end{center}
+Same thing, executing and monitoring. This time we get the constraint
+\texttt{a[0] != 1234...} and add it to our constraints to solve.
+That yields input \texttt{a=[1234567890]}.
+\begin{center}
+  \hspace*{-5em}
+  \begin{tabular}{ll}
+    \begin{minipage}{.4\textwidth}
+      \begin{center}
+\begin{tikzpicture}[
+        node distance=.5cm and .5cm,
+        every node/.style={draw, rounded corners, fill=gray!10, align=center},
+        every path/.style={thick},
+        decision/.style={draw, rounded corners, fill=gray!20, align=center, minimum width=3.5cm, yshift=2em}
+    ]
+
+
+  % Nodes
+  \node (start) {\texttt{a == null}};
+  \node (left) [below left=of start] {\texttt{a.Length > 0}};
+  \node (left1a) [below left=of left,xshift=3cm] {\texttt{a[0] == 123...}};
+  \node (left1b) [below right=of left] {};
+  \node (right) [below right=of start, text width=0.1em,xshift=-1cm] {};
+  \node (left1aa) [below left=of left1a, text width=0.1em,xshift=1cm] {};
+  \node (left1ab) [below right=of left1a, text width=0.1em,xshift=1cm] {};
+
+  \draw[->] (start) -- (right);
+  \draw[->,dotted] (start) -- (left);
+  \draw[->] (left) -- (left1a);
+  \draw[->,dotted] (left) -- (left1b);
+  \draw[->] (left1a) -- (left1aa);
+  \draw[->,dotted] (left1a) -- (left1ab);
+\end{tikzpicture}
+\end{center}
+    \end{minipage}
+    &
+    \begin{minipage}{.45\textwidth}
+\begin{tabular}{l|l|l}
+  Constraints to Solve & Input & Observed constraints\\ \hline
+   & \texttt{null} & \texttt{a == null}\\ \hline
+  \texttt{a != null} & \texttt{[]} & \texttt{a != null}\\ 
+  && ~~~ \texttt{\&\& !(a.Length>0)}\\ \hline
+  \texttt{a != null \&\&} & \texttt{[0]} & \texttt{a != null}\\ 
+  ~~~ \texttt{a.Length > 0} && ~~~ \texttt{\&\& !(a.Length>0)} \\
+  && ~~~ \texttt{\&\& a[0] != 123...} \\ \hline
+  \texttt{a != null \&\&} & \texttt{[123...]} &\\ 
+  ~~~ \texttt{a.Length > 0} &&\\
+  ~~~ \texttt{a[0]==123...} &&\\
+  
+\end{tabular}
+    \end{minipage}
+  \end{tabular}
+\end{center}
+We run on the final input and observe that we have achieved path coverage.
+\begin{center}
+  \hspace*{-5em}
+  \begin{tabular}{ll}
+    \begin{minipage}{.4\textwidth}
+      \begin{center}
+\begin{tikzpicture}[
+        node distance=.5cm and .5cm,
+        every node/.style={draw, rounded corners, fill=gray!10, align=center},
+        every path/.style={thick},
+        decision/.style={draw, rounded corners, fill=gray!20, align=center, minimum width=3.5cm, yshift=2em}
+    ]
+
+
+  % Nodes
+  \node (start) {\texttt{a == null}};
+  \node (left) [below left=of start] {\texttt{a.Length > 0}};
+  \node (left1a) [below left=of left,xshift=3cm] {\texttt{a[0] == 123...}};
+  \node (left1b) [below right=of left] {};
+  \node (right) [below right=of start, text width=0.1em,xshift=-1cm] {};
+  \node (left1aa) [below left=of left1a, text width=0.1em,xshift=1cm,fill=gray!80] {};
+  \node (left1ab) [below right=of left1a, text width=0.1em,xshift=1cm] {};
+
+  \draw[->] (start) -- (right);
+  \draw[->,dotted] (start) -- (left);
+  \draw[->] (left) -- (left1a);
+  \draw[->,dotted] (left) -- (left1b);
+  \draw[->] (left1a) -- (left1aa);
+  \draw[->,dotted] (left1a) -- (left1ab);
+\end{tikzpicture}
+\end{center}
+    \end{minipage}
+    &
+    \begin{minipage}{.45\textwidth}
+\begin{tabular}{l|l|l}
+  Constraints to Solve & Input & Observed constraints\\ \hline
+   & \texttt{null} & \texttt{a == null}\\ \hline
+  \texttt{a != null} & \texttt{[]} & \texttt{a != null}\\ 
+  && ~~~ \texttt{\&\& !(a.Length>0)}\\ \hline
+  \texttt{a != null \&\&} & \texttt{[0]} & \texttt{a != null}\\ 
+  ~~~ \texttt{a.Length > 0} && ~~~ \texttt{\&\& !(a.Length>0)} \\
+  && ~~~ \texttt{\&\& a[0] != 123...} \\ \hline
+  \texttt{a != null \&\&} & \texttt{[123...]} & \texttt{!(a.Length>0)}\\ 
+  ~~~ \texttt{a.Length > 0} &&  ~~~ \texttt{\&\& !(a.Length>0)}\\
+  ~~~ \texttt{a[0]==123...} && ~~~ \texttt{\&\& a[0] == 123...}\\
+  
+\end{tabular}
+    \end{minipage}
+  \end{tabular}
+\end{center}
+
+
+\subsection*{SAGE: Zero to Crash in 10 Generations}
+We've talked quite a bit about dynamic symbolic execution. It works in industry too. \cite{godefroid12:_sage} talks about how it's been used at
+Microsoft to detect bugs in Windows, for instance to create crashing tests for a Media1 parser. (That is an easy article to read and I recommend it.) It's a lot like what we just saw. The slides do a better job
+at showing this, but I'll include excerpts here.
+The generation 0 seed file is all 0s:
+
+\includegraphics[width=.8\textwidth]{L09/gen0.png}
+
+We do the same thing as we just did to get generation 1:
+
+\includegraphics[width=.8\textwidth]{L09/gen1.png}
+
+and repeat it 10 times, which yields a file that will crash the parser.
+
+\includegraphics[width=.8\textwidth]{L09/gen10.png}
+
+The main idea with SAGE is \emph{generational input generation}. The insight is that the thing that is expensive is the symbolic execution. SAGE uses one symbolic execution to generate multiple tests
+at once. In the \texttt{CoverMe} example just above, we negated one constraint at a time, generating one new test per symbolic execution. The paper says:
+\begin{quote}
+  Given a path constraint,
+  \emph{all} the constraints in that path are systematically negated one by one, placed in a conjunction with the prefix of the path constraintleading to it, and attempted to be solved by a constraint solver.
+\end{quote}
+
+Here's a program which we'll use to demonstate generational input generation.
+\begin{lstlisting}
+  void top(char input[4])
+  {
+    int cnt = 0;
+    if (input[0] == 'b') cnt++;
+    if (input[1] == 'a') cnt++;
+    if (input[2] == 'd') cnt++;
+    if (input[3] == '!') cnt++;
+    if (cnt > 3) crash();
+  }
+\end{lstlisting}
+We start with input \texttt{good}. This yields path constraint
+\[
+i[0] \neq \texttt{'b'} \wedge i[1] \neq \texttt{'a'} \wedge i[2] \neq \texttt{'d'} \wedge i[3] \neq \texttt{'!'}
+\]
+which then leads to four new inputs in generation 1: \texttt{bood}, \texttt{gaod}, \texttt{godd}, and \texttt{goo!}; each input is obtained from the
+original input and negating the path constraint, as we've seen before, and without rerunning the symbolic execution.
+
+We repeat the same process on all of the inputs in generation 1 to get generation 2. For this example, we can enumerate all paths
+(note that this is more than branch coverage). In general there are too many paths and one quits at some point.
+
+As for the SAGE tool itself, it was the first whitebox fuzzer used for security testing. Between 2007 and 2012 (when the paper was published), it
+ran for 400+ machine years, computing over 3 billion constraints, on hundreds of apps, finding hundreds of security bugs that no other tool found.
+
+During the development of Windows 7, SAGE found about 1/3 of all bugs discovered by file fuzzing. Even after release, it continued to find bugs,
+and the fixes were quietly shipped to over 1 billion PCs.
+
+\paragraph{DART Implementation Considerations.} Now that we've talked about generational search, we can talk about some implementation details for DART-style
+dynamic symbolic execution.
+
+Recall that the program under test is executed. That's a normal program execution, augmented with instrumentation or recording of executed instructions.
+Based on the recordings, a DART-style tool will compute a path condition. The ensuing symbolic execution may be computed in a separate phase (as done with SAGE)
+or on-the-fly (as with CUTE/CREST).
+
+For generational search, the path condition computation happens offline for each branch point. Since there are a lot of branch points, it's possible to create many new inputs from
+a single concrete execution and symbolic execution, though the SMT solver has to be re-executed. This is easy to parallelize and distribute in the cloud.
+
+\section{EXE versus DART}
+The table you've all been waiting for.
+
+\begin{tabular}{ll}
+  \textbf{EXE} & \textbf{DART} \\
+  Fine-grained control of execution & Complete execution from first step \\
+  Shallow exploration  & Deep exploration  \\
+  ~~~ (many queries early on) & ~~~ (one query per run) \\
+  Online symbolic execution  & Offline SE possible \\
+  ~~~ (SE and interpretation in lockstep) & ~~~  (execute along recorded trace)
+\end{tabular}
+
+\section{Loops: Dynamic Symbolic Execution Doesn't Solve All Problems}
+Loops are a problem for symbolic execution. Symbolic execution can only reason about finitely many execution steps.
+Programs have loops and may execute for arbitrarily many steps.
+(Recall that when we write proofs about loops, we need invariants).
+
+One way to handle this is to dynamically unroll loops. That is,
+copy-paste the loop body $N$ times in a row, for some finite $N$.  One
+would treat the backwards conditional branch implementing the loop as
+a branch condition for symbolic execution, and the choices are to do
+one more loop iteration, or to exit the loop.
+
+If a loop can only run some small (finite) number of iterations, then
+unrolling can completely explore the behaviour of that loop.  (This is
+also a key idea behind bounded model checking, which we'll discuss
+later).
+
+Other loops can run unbounded numbers of iterations (e.g. just about
+any operation on a collection data structure). Symbolic execution will
+either get stuck or skip such loops. More powerful techniques are
+needed.
+
+Actually, only loops whose iteration count depends on the input are
+problematic. If we know the maximum iteration count, then it's
+possible to execute the loop concretely.
+
+\paragraph{Dynamic Symbolic Execution and Input-Dependent Loops}. Here's some options to handle loops.
+
+In EXE (online symbolic execution), then every iteration of the loop forks the execution, and the search algorithm (at runtime) can get bored and
+break out, or it can continue unrolling the loop and running one more iteration.
+
+In DART (offline symbolic execution), we have an input and hence a concrete trace. The trace encodes some number of unrollings. Then, the search algorithm
+can cause a different number of loop executions by flipping one of the loop branches.
+
+In either case, a na\"ive search algorithm might get stuck.
+
+\section{Concretization}
+Continuing on the ``dynamic symbolic execution doesn't solve all problems'' theme, let's think about this. DSE executes the program both concretely and symbolically.
+\begin{itemize}[noitemsep]
+\item concrete execution is ``easy'' (just ask a VM)
+\item symbolic execution can be hard (e.g. multiplication)
+\end{itemize}
+What can we do when symbolic reasoning is too hard? One answer is \emph{concretization}.
+
+In concretization, we selectively replace symbolic inputs by concrete values.
+\begin{itemize}[noitemsep]
+\item this simplifies symbolic reasoning; concrete expressions are easy, we said, and we can make a symbolic expression easier to reason about by substituting in concrete values. At the limit, if we replace all symbolic variables, then the operational semantics gives a concrete value for any expression.
+\item but, how do we know what to concretize? It's not always clear why an expression is hard to symbolically reason about.
+\item concretization can result in \emph{unsoundness}; to mitigate this, we must record the concretization decision in the path condition;
+\item concretization will definitely result in \emph{incompleteness}: we had all possible values of $X$ and now we just have 5. What about $X = 6$? Or $X=-5$?
+\end{itemize}
+
+\paragraph{Example.} Let's do a concretization. Here's a state and a program.
+
+\begin{tabular}{ll}
+  \begin{minipage}{.5\textwidth}
+    \begin{tabular}{ll}
+      \multicolumn{2}{c}{$\textit{true}$} \\ \hline
+      & $C(X) = 5$ \\
+      $S(\texttt{m}) = X + 2$ & $C(\texttt{m}) = 7$ \\
+      $S(\texttt{size}) = Y$ & $C(\texttt{size}) = 256$
+    \end{tabular}
+  \end{minipage}
+  &
+  \begin{minipage}{.4\textwidth}
+  \begin{lstlisting}
+    if (m*m > size) {
+      // ...
+  \end{lstlisting}
+  \end{minipage}
+\end{tabular}
+
+The program contains condition \texttt{m*m > size}, which expands to
+symbolic $(X+2)(X+2) > Y$.
+
+It turns out that symbolic multiplication
+is difficult for SMT solvers. We therefore choose to concretize
+variable $X$, using its current concrete value $C(X) = 5$.
+The condition therefore becomes $49 = (5+2)(5+2) > Y$.
+
+If we want to enter the then-branch of the if statement,
+we do as usual: update the path condition with the (concretized)
+branch condition $49 > Y$, solve for symbolic input $Y$, and get
+e.g. $Y = 48$.
+
+\begin{tabular}{ll}
+  \begin{minipage}{.5\textwidth}
+    \begin{tabular}{ll}
+      \multicolumn{2}{c}{$49 > Y$} \\ \hline
+      & $C(X) = 5$ \\
+      $S(\texttt{m}) = X + 2$ & $C(\texttt{m}) = 7$ \\
+      $S(\texttt{size}) = Y$ & $C(\texttt{size}) = 48$
+    \end{tabular}
+  \end{minipage}
+  &
+  \begin{minipage}{.4\textwidth}
+  \begin{lstlisting}
+    if (m*m > size) {
+      // ...
+  \end{lstlisting}
+  \end{minipage}
+\end{tabular}
+
+Now say that inside the then-branch we furthermore have \texttt{if (m < 5)}.
+Symbolically, this works out to $X + 2 < 5$ due to the symbolic value for \texttt{m}.
+To explore this then-branch, we'd ask the SMT solver for a solution, and we could well get
+$X = 2$. But that's wrong. We had concretized $X$ to 5, and now we're saying that $X$ has to be 2.
+
+\textbf{How to avoid this:} record $X = 5$ in the path condition when you concretize. The SMT solver might then say ``no solutions'' (you're missing behaviours), but you won't get wrong results.
+
+\paragraph{Concretization Algorithm.}
+Here's an algorithm for concretizing variables in a symbolic expression, because it's too hard to symbolically compute with.
+As input:
+\begin{itemize}[noitemsep]
+\item a state, including path condition $\mathit{pc}$ and concrete and symbolic states $C$ and $S$;
+\item a symbolic expression $E$ to concretize
+\end{itemize}
+The algorithm:
+\begin{itemize}[noitemsep]
+\item choose variables $x_1, \ldots, x_k$ in $E$ to concretize
+\item let $E'$ be the result of replacing $x_i$ by $C(x_i$ in $E$
+\item let the concretization constraint $CC$ be $x_1 = C(x_1) \wedge \cdots \wedge x_k = C(x_k)$ and add it to $\mathit{pc}$;
+\item return the result of evaluating $E'$ on symbolic state $S$.
+\end{itemize}
+
+\paragraph{Soundness and Completeness.} Conceptually, each path that you explore in the dynamic symbolic execution is exact. The concrete results are concrete, and the
+symbolic state is computing what is called the strongest postcondition. There's no approximation here, on a per-path basis.
+
+But, symbolic execution (static or dynamic) doesn't guarantee that you explore all of the paths (remember what we said about loops); it underapproximates. In finite time, you only visit a subset
+of the paths. There is a sort of ``eventual'' completeness in that if you let it run for long enough, you'll observe any behaviour that is possible. It's sound, in that you don't see anything
+that is infeasible.
+
+Concretization remains sound (if you modify the path condition as stated above). But you are exploring less. In particular, you lose the eventual completeness property mentioned above.
+
+\paragraph{Summary of concretization.}
+This technique, concretization, is a key technique for making dynamic symbolic execution work in practice. It enables external calls, which you can't evaluate symbolically. You can evaluate
+the calls if you concretize the call arguments and just call the callee.
+
+We talked about concretization constraints. It is possible to not add them to the path condition, as was done in the original DART. Then the dynamic symbolic execution might diverge
+when it has contradictory values for symbolic variables. This isn't sound. But if you are willing to sacrifice soundness, you can deal with divergences with random restarts.
 
 \bibliographystyle{alpha}
 \bibliography{L09}

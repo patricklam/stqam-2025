@@ -203,7 +203,7 @@ At each execution step:
     \item for the branch that the concrete execution didn't take, ask the SMT solver to compute new initial concrete values from the symbolic state. These new inputs must be consistent with the relevant path condition. Replace concrete values with the newly-computed ones, obtaining them by substituting the new inputs into the symbolic state. (Possibly this is impossible, in which case you give up on that path.)
   \end{itemize}
 \end{itemize}
-Let's look at an example. One could do this example with classical symbolic execution, but let's do EXE-style on it.
+Let's look at an example. We did this example with classical symbolic execution, but let's do EXE-style on it.
 \begin{lstlisting}
   int proc(int x) {
     int r = 0;

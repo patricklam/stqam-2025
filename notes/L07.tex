@@ -941,6 +941,31 @@ into
 \end{center}
 and show that the \texttt{error()} call is reachable or unreachable.
 
+The rewriting process, or instrumenting the programs with properties, can
+translate any safety property (``bad things don't happen'') into
+reachability (of an \texttt{error()} call). There is some similarity
+to fuzzing.
+
+Rewriting can be explicit or implicit. For explicit rewriting, this is like
+sanitizers, and we instrument the code with checks. But the symbolic engine
+can also implicitly inject extra checks at runtime.
+
+Checks might look like this:
+\begin{eqnarray*}
+ \texttt{y = 100 / x} &\Rightarrow& \texttt{assert x != 0; y = 100/x} \mbox{ (division by zero)}\\
+ \texttt{a[x] = 10} &\Rightarrow& \texttt{assert x >= 0 \&\& x < len(a)} \mbox{ (array bounds)}
+\end{eqnarray*}
+
+\section*{Problems of (Classical) Symbolic Execution}
+Of course, I've shown you cases where symbolic execution works. This isn't real code. What happens for real?
+
+Some code is hard to analyze. Even if it generates innocuous-looking constraints, the resulting constraints might be beyond the abilities of our SMT solvers. And cryptographic hashes are definitely hard to invert.
+
+There's also the path explosion problem. The number of paths in the program is exponential in the size of the program. The paths are caused by control flow, loops, procedures, concurrency, etc.
+
+And, to analyze real code, you need to work with more than just integers.
+There are pointers and data structures; files and databases; networks and sockets; and threads and thread schedules, among other things. There has to be some way of handling these. 
+Which is why we'll talk about dynamic symbolic execution soon.
 
 
 \bibliographystyle{alpha}

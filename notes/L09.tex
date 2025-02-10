@@ -750,6 +750,10 @@ test case \texttt{proc(1)}.
 Looking at the execution, the last path condition occurred at (2) where we had \texttt{x < 5}. We therefore form the new path condition
 $X \le 8 \wedge \neg(X < 5)$; the SMT solver tells us that it is satisfiable ($\checkmark$) and gives us solution $x = 6$ i.e. test case \texttt{proc(6)}.
 We run this test case and paste the new state onto the picture.
+Really, there are different nodes in the tree for the new run, from the root,
+but I don't know how to represent that, so I'm just leaving the old nodes in place.
+There are really multiple overlapping nodes e.g. for the root we also have
+a state with $C(\texttt{x}) = 6$.
 
 \begin{center}
 \begin{tikzpicture}[

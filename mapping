@@ -2,3 +2,7 @@
 02 Engineering-Tests
 03 Coverage-and-Fuzzing
 04 Mutation-Analysis
+05 Foundations-Syntax-and-Semantics
+05b Structural-Induction-Example
+05c Semantic-Equivalence-Proof-Example
+09 Dynamic-Symbolic-Execution

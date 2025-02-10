@@ -450,7 +450,7 @@ The other possibility is the then-branch of (2). Let's try that.
     
     \end{tikzpicture}
 \end{center}
-We have an unsatisfiable path condition $X > 8 \wedge X < 5$ so we give up.
+We have an unsatisfiable $(\times)$ path condition $X > 8 \wedge X < 5$ so we give up.
 
 We've now completely explored the then-branch of (1). We still haven't finished
 exploring the else-branch of (1), so we continue executing it until we reach (2).
@@ -646,6 +646,218 @@ It executes any code from the executable of interest symbolically. There's still
 code concretely. Under-the-hood, it uses LLVM.
 
 \section{DART: Directed Automated Random Testing}
+Besides EXE, the other approach is DART. Here, we test the (entire) program concretely, recording the execution paths taken in each run, and then use symbolic execution to compute new inputs.
+
+For the concrete runs, we can use random inputs (from fuzzing), user-provided inputs (from tests), or both. We instrument the program to record execution paths (similar to measuring
+path coverage), typically at binary level.
+
+Given a run, we can then re-execute the program symbolically and compute path conditions along the way. As with EXE, at each branch condition, we adjust inputs to force
+that a different branch run, yielding new inputs that cover new execution paths.
+
+We can repeat the concrete run/adjust input loop until we run out of time, or (ha, ha) we find all bugs.
+
+Here's some pseudocode.
+\begin{lstlisting}[escapeinside={(*}{*)}]
+  formula Seen := False
+  while (*$\neg$*)Seen is satisfiable do
+    find input (*$x$*) that satisfies (*$\neg$*)Seen
+    execute (*$P(x)$*) and record path condition (*$C$*)
+    // important: (*$x$*) satisfies (*$C$*)
+    Seen := Seen (*$\vee$*) (*$C$*) // record (*$C$*) as seen
+  done
+\end{lstlisting}
+Here:
+\begin{itemize}[noitemsep]
+\item \texttt{Seen} is a formula, recording what path conditions we've seen
+\item $P$ is the program
+\item $x$ is a program input (one or multiple values; command-line parameters, input files, etc\ldots)
+\item $C$ is a path condition, computed using symbolic execution, based on the program path induced by input $x$
+\end{itemize}
+
+Let's run through the same program as from EXE again. I don't need to show the concrete execution step-by-step; DART runs it all through, anyway. We are again starting with input \texttt{x = 1}, i.e.
+test case \texttt{proc(1)}.
+
+\begin{tabular}{ll}
+\begin{minipage}{.4\textwidth}
+\begin{lstlisting}
+  int proc(int x) {
+    int r = 0;
+
+    if (x > 8) { // (1)
+      r = x - 7
+    }
+
+    if (x < 5) { // (2)
+      r = x - 2;
+    }
+  }
+\end{lstlisting}
+\end{minipage}
+&
+\begin{minipage}{.55\textwidth}
+\begin{tikzpicture}[
+        node distance=1.5cm and 1cm,
+        every node/.style={draw, rounded corners, fill=gray!10, align=center},
+        every path/.style={thick},
+        decision/.style={draw, rounded corners, fill=gray!20, align=center, minimum width=3.5cm, yshift=2em}
+    ]
+
+
+    % Nodes
+      \node (start) {\textbf{$pc = \textsf{true}$} \\
+        $\begin{array}{ll}
+        S(\mathtt{x}) = X & C(\mathtt{x}) = 1 \\
+                          & C(\mathtt{r}) = 0
+      \end{array}$ };
+    
+    \node (right)[below right=of start, decision,xshift=-3em] {$X \leq 8$ \\ 
+        $\begin{array}{ll}
+        S(\mathtt{x}) = X & C(\mathtt{x}) = 1 \\
+                          & C(\mathtt{r}) = 0
+      \end{array}$ };
+    \node (right2)[below left=of right,decision,xshift=1em,yshift=1.5em] {$X \le 8 \wedge X < 5$ \\ 
+        $\begin{array}{ll}
+        S(\mathtt{x}) = X & C(\mathtt{x}) = 1 \\
+                          & C(\mathtt{r}) = 0
+      \end{array}$ };
+    \node (right3)[below=of right2,yshift=3em] {$X \le 8 \wedge X < 5$ \\ 
+        $\begin{array}{ll}
+        S(\mathtt{x}) = X & C(\mathtt{x}) = 1 \\
+        S(\mathtt{r}) = X-2 & C(\mathtt{r}) = -1
+      \end{array}$ };
+    
+    % Edges
+    \draw[->, dotted] (start) -- (right);
+    \draw[->] (right) -- (right2);
+    \draw[->] (right2) -- (right3);
+    
+\end{tikzpicture}
+\end{minipage}
+\end{tabular}
+
+Looking at the execution, the last path condition occurred at (2) where we had \texttt{x < 5}. We therefore form the new path condition
+$X \le 8 \wedge \neg(X < 5)$; the SMT solver tells us that it is satisfiable ($\checkmark$) and gives us solution $x = 6$ i.e. test case \texttt{proc(6)}.
+We run this test case and paste the new state onto the picture.
+
+\begin{center}
+\begin{tikzpicture}[
+        node distance=1.5cm and 1cm,
+        every node/.style={draw, rounded corners, fill=gray!10, align=center},
+        every path/.style={thick},
+        decision/.style={draw, rounded corners, fill=gray!20, align=center, minimum width=3.5cm, yshift=2em}
+    ]
+
+
+    % Nodes
+      \node (start) {\textbf{$pc = \textsf{true}$} \\
+        $\begin{array}{ll}
+        S(\mathtt{x}) = X & C(\mathtt{x}) = 1 \\
+                          & C(\mathtt{r}) = 0
+      \end{array}$ };
+    
+    \node (right)[below right=of start, decision,xshift=-3em] {$X \leq 8$ \\ 
+        $\begin{array}{ll}
+        S(\mathtt{x}) = X & C(\mathtt{x}) = 1 \\
+                          & C(\mathtt{r}) = 0
+      \end{array}$ };
+    \node (right2)[below left=of right,decision,xshift=1em,yshift=1.5em] {$X \le 8 \wedge X < 5$ \\ 
+        $\begin{array}{ll}
+        S(\mathtt{x}) = X & C(\mathtt{x}) = 1 \\
+                          & C(\mathtt{r}) = 0
+      \end{array}$ };
+    \node (right3)[below=of right2,yshift=3em] {$X \le 8 \wedge X < 5$ \\ 
+        $\begin{array}{ll}
+        S(\mathtt{x}) = X & C(\mathtt{x}) = 1 \\
+        S(\mathtt{r}) = X-2 & C(\mathtt{r}) = -1
+      \end{array}$ };
+    \node (right2b)[below right=of right,decision,xshift=1em,yshift=1.5em] {$X \le 8 \wedge X \ge 5$ \\ 
+        $\begin{array}{ll}
+        S(\mathtt{x}) = X & C(\mathtt{x}) = 6 \\
+                          & C(\mathtt{r}) = 0
+      \end{array}$ };
+    
+    % Edges
+    \draw[->, dotted] (start) -- (right);
+    \draw[->] (right) -- (right2);
+    \draw[->] (right) -- (right2b);
+    \draw[->] (right2) -- (right3);
+    
+\end{tikzpicture}
+\end{center}
+Because we don't run the then-case of (2), this is the end of the execution for \texttt{proc(6)}, and
+we've fully explored this part of the space. We back up to (1) and negate that path condition, giving us
+new path condition $\neg (X \le 8)$. The SMT solver once again says that this is satisfiable ($\checkmark$)
+and gives us solution $X = 9$ or test case \texttt{proc(9)}. We run the program again with this input.
+
+\begin{center}
+\begin{tikzpicture}[
+        node distance=1.5cm and 1cm,
+        every node/.style={draw, rounded corners, fill=gray!10, align=center},
+        every path/.style={thick},
+        decision/.style={draw, rounded corners, fill=gray!20, align=center, minimum width=3.5cm, yshift=2em}
+    ]
+
+
+    % Nodes
+      \node (start) {\textbf{$pc = \textsf{true}$} \\
+        $\begin{array}{ll}
+        S(\mathtt{x}) = X & C(\mathtt{x}) = 1 \\
+                          & C(\mathtt{r}) = 0
+      \end{array}$ };
+
+    \node (left)[below left=of start, decision,xshift=0em,yshift=1em] {$X > 8$ \\
+        $\begin{array}{ll}
+        S(\mathtt{x}) = X & C(\mathtt{x}) = 9 \\
+                          & C(\mathtt{r}) = 0
+      \end{array}$ };
+    \node (left2)[below=of left,yshift=-0.8em] {$X > 8$ \\
+        $\begin{array}{ll}
+        S(\mathtt{x}) = X & C(\mathtt{x}) = 9 \\
+        S(\mathtt{r}) = X-7 & C(\mathtt{r}) = 2
+      \end{array}$ };
+    \node (left3)[below=of left2,yshift=-0.8em] {$X > 8 \wedge X \ge 5$ \\
+        $\begin{array}{ll}
+        S(\mathtt{x}) = X & C(\mathtt{x}) = 9 \\
+        S(\mathtt{r}) = X-7 & C(\mathtt{r}) = 2
+      \end{array}$ };
+      
+    \node (right)[below right=of start, decision,xshift=-3em,yshift=1em] {$X \leq 8$ \\ 
+        $\begin{array}{ll}
+        S(\mathtt{x}) = X & C(\mathtt{x}) = 1 \\
+                          & C(\mathtt{r}) = 0
+      \end{array}$ };
+    \node (right2)[below left=of right,decision,xshift=1em,yshift=1.5em] {$X \le 8 \wedge X < 5$ \\ 
+        $\begin{array}{ll}
+        S(\mathtt{x}) = X & C(\mathtt{x}) = 1 \\
+                          & C(\mathtt{r}) = 0
+      \end{array}$ };
+    \node (right3)[below=of right2,yshift=-0.5em] {$X \le 8 \wedge X < 5$ \\ 
+        $\begin{array}{ll}
+        S(\mathtt{x}) = X & C(\mathtt{x}) = 1 \\
+        S(\mathtt{r}) = X-2 & C(\mathtt{r}) = -1
+      \end{array}$ };
+    \node (right2b)[below=of right,decision,xshift=1em,yshift=-1.5em] {$X \le 8 \wedge X \ge 5$ \\ 
+        $\begin{array}{ll}
+        S(\mathtt{x}) = X & C(\mathtt{x}) = 6 \\
+                          & C(\mathtt{r}) = 0
+      \end{array}$ };
+    
+    % Edges
+    \draw[->, dotted] (start) -- (right);
+    \draw[->] (start) -- (left);
+    \draw[->] (left) -- (left2);
+    \draw[->,dotted] (left2) -- (left3);
+    \draw[->] (right) -- (right2);
+    \draw[->] (right) -- (right2b);
+    \draw[->] (right2) -- (right3);
+    
+\end{tikzpicture}
+\end{center}
+Running through the program, we collect another path condition $X \ge 5$ and conjoin it
+with what we had before to get $X > 8 \wedge X \ge 5$. The last possible path condition we
+might explore is from negating $X \ge 5$ to yield $X > 8 \wedge X < 5$, but the SMT solver
+tells us that this is unsatisfiable~($\times$), so we are done, and we once again have the inputs
+$9, 1, 6$, a.k.a. test cases \texttt{proc(9)}, \texttt{proc(1)}, and \texttt{proc(6)}.
 
 \bibliographystyle{alpha}
 \bibliography{L09}

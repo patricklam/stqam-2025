@@ -1,4 +1,5 @@
 \documentclass[11pt]{article}
+\usepackage{pifont}
 \usepackage{multicol}
 \usepackage{listings}
 \usepackage{pgf}
@@ -12,6 +13,7 @@
     text width=5em, text centered, rounded corners, minimum height=2em]
 \tikzstyle{bt} = [rectangle, draw, fill=blue!20, 
     text width=1em, text centered, rounded corners, minimum height=2em]
+\newcommand{\xmark}{\ding{55}}
 
 \newtheorem{defn}{Definition}
 \newtheorem{crit}{Criterion}
@@ -68,7 +70,7 @@ basicstyle=\ttfamily,commentstyle=\scriptsize\itshape,showstringspaces=false,bre
 
 \begin{document}
 
-\lecture{9 --- February 3, 2025}{Winter 2025}{Patrick Lam}{version 1}
+\lecture{9 --- February 3, 2025}{Winter 2025}{Patrick Lam}{version 1b}
 
 We've talked about symbolic execution, which seems too good to be true, from the examples that we saw.
 What? Automatically finding inputs that explore all interesting behaviour? How?
@@ -88,8 +90,8 @@ The issue with symbolic executiion is that it's hard to scale. Consider these th
     return 0;
   }
 \end{lstlisting}
-Recall that symbolic execution is trying to find inputs that reach all
-program points, including the call to \texttt{error()}.  So, it
+Recall that classical symbolic execution is trying to find inputs that reach all
+program points (specifically: cover all paths), including the call to \texttt{error()}.  So, it
 considers the \texttt{if} condition \texttt{x == complex(y)}. In the
 previous lecture, we had conditions that were just simple arithmetic
 and boolean expressions, and hence easy to make either true or false
@@ -177,10 +179,10 @@ Let's start by seeing how the EXE-style dynamic symbolic execution works.
 or just hard-code some initial inputs.
 
 But, at the same time, EXE runs the symbolic execution in parallel. The symbolic execution follows the concrete execution,
-keeping track of which values are inputs (symbolic) or not inputs (concrete). We've talked about computing path conditions
-before, and we'll do that here, in terms of the symbolic inputs.
+keeping track of which values come from inputs (symbolic) or not (concrete). We've talked about computing path conditions
+before, and we'll do that here, using symbolic inputs in the path conditions.
 
-Things get interesting at branch points, where our goal is to explore both cases. At every branch point:
+Things get interesting at branch points, where our goal is to explore both cases. At every branch:
 \begin{itemize}[noitemsep]
 \item concrete execution will take a branch, say branch1.
 \item symbolic execution then forces execution into branch2 as well; it updates the input to do that, updating the path condition, and hence creating a new concrete state that reaches branch2.
@@ -191,7 +193,7 @@ We now have concrete inputs that reach both branch1 and branch2.
 Variables always have a concrete value (in our formalization, an integer), and may have a symbolic value as well (an expression which may contain
 input variables e.g. $X$). To start, the state contains mappings to symbolic state like $\mathtt{x}=X$ for all inputs $X$.
 
-At each execution step:
+At each execution step, we do the following:
 \begin{itemize}[noitemsep]
 \item update the concrete state by executing a program instruction concretely;
 \item update the symbolic state by executing the same instruction symbolically;
@@ -200,10 +202,10 @@ At each execution step:
     \item fork the execution state into two
     \item true branch: conjoin the branch condition to the previous path condition
     \item false branch: conjoin the negated branch condition to the previous path condition (that's how you get in the else branch)
-    \item for the branch that the concrete execution didn't take, ask the SMT solver to compute new initial concrete values from the symbolic state. These new inputs must be consistent with the relevant path condition. Replace concrete values with the newly-computed ones, obtaining them by substituting the new inputs into the symbolic state. (Possibly this is impossible, in which case you give up on that path.)
+    \item for the branch that the concrete execution didn't take, ask the SMT solver to compute new initial concrete values from the symbolic state. These new inputs must be consistent with the relevant path condition. Replace concrete values with the newly-computed ones, obtaining them by substituting the new inputs into the symbolic state. (This might be impossible, in which case you give up on that path.)
   \end{itemize}
 \end{itemize}
-Let's look at an example. We did this example with classical symbolic execution, but let's do EXE-style on it.
+Let's look at an example. We did this example with classical symbolic execution, but let's do EXE-style dynamic symbolic execution on it.
 \begin{lstlisting}
   int proc(int x) {
     int r = 0;
@@ -350,7 +352,7 @@ We continue execution on the then-branch, which reassigns \texttt{r}.
     
     \end{tikzpicture}
 \end{center}
-Let's continue with the next if-statement (2). In this case we have concrete \texttt{x} being 9, which runs to the else-branch, and finishes with no further changes in state.
+Let's continue on this branch with the next if-statement (2). In this case we have concrete \texttt{x} being 9, which runs to the empty else-branch, and thus finishes with no further changes in state.
 \begin{center}
     \begin{tikzpicture}[
         node distance=1.5cm and 1cm,
@@ -429,7 +431,7 @@ The other possibility is the then-branch of (2). Let's try that.
         S(\mathtt{x}) = X & C(\mathtt{x}) = 9 \\
         S(\mathtt{r}) = X - 7 & C(\mathtt{r}) = 2
       \end{array}$ };
-    \node (left3b)[below right=of left2,decision,xshift=-5em,yshift=1em] {$X > 8 \wedge X < 5$ ~~ $\times$ \\ 
+    \node (left3b)[below right=of left2,decision,xshift=-5em,yshift=1em] {$X > 8 \wedge X < 5$ ~~ \xmark \\ 
         $\begin{array}{ll}
         S(\mathtt{x}) = X & C(\mathtt{x}) = 9 \\
         S(\mathtt{r}) = X - 7 & C(\mathtt{r}) = 2
@@ -450,11 +452,12 @@ The other possibility is the then-branch of (2). Let's try that.
     
     \end{tikzpicture}
 \end{center}
-We have an unsatisfiable $(\times)$ path condition $X > 8 \wedge X < 5$ so we give up.
+We have an unsatisfiable (\xmark) path condition $X > 8 \wedge X < 5$ so we give up.
 
 We've now completely explored the then-branch of (1). We still haven't finished
 exploring the else-branch of (1), so we continue executing it until we reach (2).
-In this case, the concrete state says to execute the then-branch of (2).
+In this case, the concrete state says to execute the then-branch of (2) because
+$1 < 5$.
 \begin{center}
     \begin{tikzpicture}[
         node distance=1.5cm and 1cm,
@@ -632,7 +635,7 @@ Finally, we finish unfinished business with the then-branch of (2) and run throu
     
     \end{tikzpicture}
 \end{center}
-We have satisfying assignments $X = 9$, $X = 1$, and $X = 6$, yielding test cases
+Throughout the dynamic symbolic execution, we collected satisfying assignments $X = 9$, $X = 1$, and $X = 6$, yielding test cases
 \texttt{proc(9)}, \texttt{proc(1)}, \texttt{proc(6)}.
 
 \paragraph{EXE: Implementation considerations.} An implementation of EXE needs to maintain multiple execution states while running the program, with both
@@ -747,12 +750,12 @@ test case \texttt{proc(1)}.
 \end{minipage}
 \end{tabular}
 
-Looking at the execution, the last path condition occurred at (2) where we had \texttt{x < 5}. We therefore form the new path condition
-$X \le 8 \wedge \neg(X < 5)$; the SMT solver tells us that it is satisfiable ($\checkmark$) and gives us solution $x = 6$ i.e. test case \texttt{proc(6)}.
+Looking at the execution, the last path condition occurred at (2) where we had \texttt{x < 5}. We therefore negate it to form the new path condition
+$X \le 8 \wedge \neg(X < 5)$; the SMT solver tells us that it is satisfiable ($\checkmark$) and gives us solution $x = 6$, i.e. test case \texttt{proc(6)}.
 We run this test case and paste the new state onto the picture.
 Really, there are different nodes in the tree for the new run, from the root,
 but I don't know how to represent that, so I'm just leaving the old nodes in place.
-There are really multiple overlapping nodes e.g. for the root we also have
+There are really multiple overlapping nodes; e.g., for the root we also have
 a state with $C(\texttt{x}) = 6$.
 
 \begin{center}
@@ -800,7 +803,7 @@ a state with $C(\texttt{x}) = 6$.
     
 \end{tikzpicture}
 \end{center}
-Because we don't run the then-case of (2), this is the end of the execution for \texttt{proc(6)}, and
+Because this execution, where \texttt{x=6}, doesn't enter the then-case of (2), this is the end of the execution for \texttt{proc(6)}, and
 we've fully explored this part of the space. We back up to (1) and negate that path condition, giving us
 new path condition $\neg (X \le 8)$. The SMT solver once again says that this is satisfiable ($\checkmark$)
 and gives us solution $X = 9$ or test case \texttt{proc(9)}. We run the program again with this input.
@@ -872,11 +875,11 @@ and gives us solution $X = 9$ or test case \texttt{proc(9)}. We run the program 
 Running through the program, we collect another path condition $X \ge 5$ and conjoin it
 with what we had before to get $X > 8 \wedge X \ge 5$. The last possible path condition we
 might explore is from negating $X \ge 5$ to yield $X > 8 \wedge X < 5$, but the SMT solver
-tells us that this is unsatisfiable~($\times$), so we are done, and we once again have the inputs
+tells us that this is unsatisfiable~(\xmark), so we are done, and we once again have the inputs
 $9, 1, 6$, a.k.a. test cases \texttt{proc(9)}, \texttt{proc(1)}, and \texttt{proc(6)}.
 
 \subsection*{A Second DART Example}
-Let's now look at this code, which looks a bit more realistic.
+Let's now look at this code, which looks a bit more realistic. Our semantics can't quite handle it (because of the array), but we can reason through it using informal semantics.
 \begin{lstlisting}
   void CoverMe(int [] a) {
     if (a == null) return;
@@ -887,7 +890,7 @@ Let's now look at this code, which looks a bit more realistic.
 \end{lstlisting}
 Note again the reliance on exceptions to indicate bugs. We are trying to manufacture the non-empty
 array with element 0 containing 1234567890. We start with input \texttt{null} for \texttt{a} and observe
-path constraint \texttt{a == null}.
+path constraint \texttt{a == null} on that execution.
 
 \begin{center}
 \begin{tabular}{l|l|l}
@@ -977,7 +980,7 @@ We ask the SMT solver to solve that constraint and get \texttt{a = [0]}.
   \end{tabular}
 \end{center}
 Same thing, executing and monitoring. This time we get the constraint
-\texttt{a[0] != 1234...} and add it to our constraints to solve.
+\texttt{a[0] != 1234567890} and add it to our constraints to solve.
 That yields input \texttt{a=[1234567890]}.
 \begin{center}
   \hspace*{-5em}
@@ -1120,7 +1123,7 @@ We start with input \texttt{good}. This yields path constraint
 i[0] \neq \texttt{'b'} \wedge i[1] \neq \texttt{'a'} \wedge i[2] \neq \texttt{'d'} \wedge i[3] \neq \texttt{'!'}
 \]
 which then leads to four new inputs in generation 1: \texttt{bood}, \texttt{gaod}, \texttt{godd}, and \texttt{goo!}; each input is obtained from the
-original input and negating the path constraint, as we've seen before, and without rerunning the symbolic execution.
+original input and negating a path constraint, as we've seen before, and without rerunning the symbolic execution.
 
 We repeat the same process on all of the inputs in generation 1 to get generation 2. For this example, we can enumerate all paths
 (note that this is more than branch coverage). In general there are too many paths and one quits at some point.
@@ -1135,7 +1138,7 @@ and the fixes were quietly shipped to over 1 billion PCs.
 dynamic symbolic execution.
 
 Recall that the program under test is executed. That's a normal program execution, augmented with instrumentation or recording of executed instructions.
-Based on the recordings, a DART-style tool will compute a path condition. The ensuing symbolic execution may be computed in a separate phase (as done with SAGE)
+Based on the recordings, a DART-style tool will compute a path condition (or several, for generational). The ensuing symbolic execution may be computed in a separate phase (as done with SAGE)
 or on-the-fly (as with CUTE/CREST).
 
 For generational search, the path condition computation happens offline for each branch point. Since there are a lot of branch points, it's possible to create many new inputs from
@@ -1178,7 +1181,7 @@ Actually, only loops whose iteration count depends on the input are
 problematic. If we know the maximum iteration count, then it's
 possible to execute the loop concretely.
 
-\paragraph{Dynamic Symbolic Execution and Input-Dependent Loops}. Here's some options to handle loops.
+\paragraph{Dynamic Symbolic Execution and Input-Dependent Loops.} Here's some options to handle loops.
 
 In EXE (online symbolic execution), then every iteration of the loop forks the execution, and the search algorithm (at runtime) can get bored and
 break out, or it can continue unrolling the loop and running one more iteration.
@@ -1191,7 +1194,7 @@ In either case, a na\"ive search algorithm might get stuck.
 \section{Concretization}
 Continuing on the ``dynamic symbolic execution doesn't solve all problems'' theme, let's think about this. DSE executes the program both concretely and symbolically.
 \begin{itemize}[noitemsep]
-\item concrete execution is ``easy'' (just ask a VM)
+\item concrete execution is ``easy'' (just get a VM to do it)
 \item symbolic execution can be hard (e.g. multiplication)
 \end{itemize}
 What can we do when symbolic reasoning is too hard? One answer is \emph{concretization}.
@@ -1217,7 +1220,7 @@ In concretization, we selectively replace symbolic inputs by concrete values.
   \end{minipage}
   &
   \begin{minipage}{.4\textwidth}
-  \begin{lstlisting}
+  \begin{lstlisting}[numbers=none]
     if (m*m > size) {
       // ...
   \end{lstlisting}
@@ -1260,10 +1263,10 @@ Symbolically, this works out to $X + 2 < 5$ due to the symbolic value for \textt
 To explore this then-branch, we'd ask the SMT solver for a solution, and we could well get
 $X = 2$. But that's wrong. We had concretized $X$ to 5, and now we're saying that $X$ has to be 2.
 
-\textbf{How to avoid this:} record $X = 5$ in the path condition when you concretize. The SMT solver might then say ``no solutions'' (you're missing behaviours), but you won't get wrong results.
+\textbf{How to avoid this:} record $X = 5$ in the path condition when you concretize. The SMT solver might then say ``no solutions'' (you're missing behaviours that you concretized away), but you won't get wrong results.
 
 \paragraph{Concretization Algorithm.}
-Here's an algorithm for concretizing variables in a symbolic expression, because it's too hard to symbolically compute with.
+Here's an algorithm for concretizing variables in a symbolic expression, which you might use when the expression is too hard to deal with.
 As input:
 \begin{itemize}[noitemsep]
 \item a state, including path condition $\mathit{pc}$ and concrete and symbolic states $C$ and $S$;
@@ -1271,9 +1274,9 @@ As input:
 \end{itemize}
 The algorithm:
 \begin{itemize}[noitemsep]
-\item choose variables $x_1, \ldots, x_k$ in $E$ to concretize
-\item let $E'$ be the result of replacing $x_i$ by $C(x_i$ in $E$
-\item let the concretization constraint $CC$ be $x_1 = C(x_1) \wedge \cdots \wedge x_k = C(x_k)$ and add it to $\mathit{pc}$;
+\item choose variables $x_1, \ldots, x_k$ in $E$ to concretize;
+\item let $E'$ be the result of replacing $x_i$ by $C(x_i)$ in $E$;
+\item add the concretization constraint $x_1 = C(x_1) \wedge \cdots \wedge x_k = C(x_k)$ to $\mathit{pc}$;
 \item return the result of evaluating $E'$ on symbolic state $S$.
 \end{itemize}
 

@@ -450,7 +450,167 @@ but now we use inductive invariant $x \leq 6$. One application of the inductive 
 \end{prooftree}
 \]
 
-\paragraph{Completed Hoare triples.} These are the strongest postconditions / weakest preconditions from before.
+\paragraph{Example: A more interesting program.} Here's a more challenging program.
+We are actually going to reason about multiplication.
+
+\begin{lstlisting}
+// { n \geq 0 }
+p := 0;
+x := 0;
+while x < n do
+  x := x + 1;
+  p := p + m
+// { p = n * m }
+\end{lstlisting}
+
+This is a composition of three statements, so the only rule available to us (aside from the rule of consequence) is that for sequential composition.
+rule.
+\[
+  \inferrule{\{A\}~s_1~\{B\} ~~ \{B\}~s_2~\{C\}}{\{A\}~s_1 \texttt{~;~} s_2~~\{C\}}
+\]
+
+In particular, start with $A = \{ n \geq 0 \}, B = \{ p = n * m \}$, and $c_1 = \texttt{p := 0; x := 0}, c_2 = \texttt{while \ldots}$. Then we have:
+\[
+\begin{prooftree}
+\hypo{\{ n \geq 0 \} \texttt{~p := 0; x := 0~} \{ C \}}
+\hypo{\{ C \} \texttt{~while x < n do x := x + 1; p := p + m~} \{ p = n * m \}}
+\infer2{\{ n \geq 0 \} \texttt{~p := 0; x := 0; while x < n do x := x + 1; p := p + m~} \{ p = n * m \}}
+\end{prooftree}
+\]
+for some $C$ that we have to figure out. What could $C$ be? We are better off figuring out what precondition we need for the while loop $c_2$. We have to use the rule for \texttt{while}. But that rule is
+
+\[
+    \inferrule{\{I \wedge b\}~c~\{I\} }{\{I\}~\texttt{while $b$ do $c$}~\{I \wedge \neg b\}}
+\]
+
+and we have $p = n * m$, which is not of the form $I \wedge \neg b$. Let $I = C$, and apply the rule of consequence, furthermore with $A = A' = I$, $B' = n * m$, and $B = I \wedge b = I \wedge x \geq n$.  Recall that the rule of consequence is:
+
+\[
+\begin{prooftree}
+  \hypo{A' \Rightarrow A}
+  \hypo{\{A \} ~c~ \{ B\} }
+  \hypo{B \Rightarrow B'}
+  \infer3{\{A'\} ~c~\{B' \}}
+\end{prooftree}
+\]
+
+So we can convert $\{ C \} \texttt{~while x < n do x := x + 1; p := p + m~} \{ p = n * m \}$ with the variable assignment above:
+\[
+\begin{prooftree}
+  \hypo{I \Rightarrow I}
+  \hypo{\{I \} \texttt{~while x < n do x := x + 1; p := p + m~} \{ I \wedge x \geq n \} }
+  \hypo{I \wedge x \geq n \Rightarrow p = n * m }
+  \infer3{\{I \} \texttt{~while x < n do x := x + 1; p := p + m~}\{ p = n * m \}}
+\end{prooftree}
+\]
+if we can show $I \wedge x \geq n \Rightarrow p = n * m$ (we'll do this later).
+
+This gives us derivation tree:
+\[
+\begin{prooftree}
+\hypo{\{ n \geq 0 \} \texttt{~p := 0; x := 0~} \{ I \}}
+  \hypo{\{I \} \texttt{~while \ldots ~} \{ I \wedge x \geq n \} }
+  \hypo{I \wedge x \geq n \Rightarrow p = n * m }
+  \infer2{\{I \} \texttt{~while \ldots ~}\{ p = n * m \}}
+\infer2{\{ n \geq 0 \} \texttt{~p := 0; x := 0; while x < n do x := x + 1; p := p + m~} \{ p = n * m \}}
+\end{prooftree}
+\]
+and we can actually apply the \texttt{while} rule:
+\[
+\begin{prooftree}
+\hypo{\{ n \geq 0 \} \texttt{~p := 0; x := 0~} \{ I \}}
+  \hypo{\{I \wedge x < n \} \texttt{~x := x + 1; p := p + m~} \{ I \} }
+  \infer1{\{I \} \texttt{~while \ldots ~} \{ I \wedge x \geq n \} }
+  \hypo{I \wedge x \geq n \Rightarrow \ldots }
+  \infer2{\{I \} \texttt{~while \ldots ~}\{ p = n * m \}}
+\infer2{\{ n \geq 0 \} \texttt{~p := 0; x := 0; while x < n do x := x + 1; p := p + m~} \{ p = n * m \}}
+\end{prooftree}
+\]
+Once again, we split compound statements, this time the body of the while loop:
+\[
+\begin{prooftree}
+\hypo{\{ I \wedge x < n \} \texttt{~x := x + 1~} \{ C \}}
+\hypo{\{ C \} \texttt{~ p := p + m~} \{ I \}}
+\infer2{\{ I \wedge x < n \} \texttt{~x := x + 1; p := p + m~} \{ I \}}
+\end{prooftree}
+\]
+and we will need to use the assignment rule $\{ A[e/x] \} \texttt{~x := e~} \{ A \}$ 
+on the assignment \texttt{p := p + m}, so that we get precondition $I[p+m/p]$,
+which we propagate to the first assignment also.
+\[
+\begin{prooftree}
+  \hypo{\{I \wedge x < n\} \texttt{~x := x + 1~} \{ I[p+m/p] \}}
+  \hypo{\{I[p+m/p]\} \texttt{~p := p + m~} \{ I \}}
+  \infer2{\{I \wedge x < n \} \texttt{~x := x + 1; p := p + m~} \{ I \} }
+  \infer1{\{I \} \texttt{~while \ldots ~} \{ I \wedge x \geq n \} }
+\end{prooftree}
+\]
+We have precondition for \texttt{x := x + 1} as $I \wedge x < n$, but
+the assignment rule results in $I[\mbox{$x+1$}/x, ~ \mbox{$p+m$}/p]$.
+The rule of consequence allows us to strengthen the precondition (well, we'll show
+the required $A' \Rightarrow A$ implication later):
+\[
+\begin{prooftree}
+  \hypo{I \wedge x < n \Rightarrow I[x+1/x, p+m/p] \}}
+  \hypo{\{I[x+1/x, p+m/p]\} \texttt{~x := x + 1~} \{ I[p+m/p] \}}
+\infer2{\{I \wedge x < n\} \texttt{~x := x + 1~} \{ I[p+m/p] \}}
+\end{prooftree}
+\]
+For now, let's address the left-hand side of the proof tree, where we have the Hoare triple for the compound statement $\{ n \geq 0 \} \texttt{~p := 0; x := 0~} \{ I \}$.
+\[
+\begin{prooftree}
+\hypo{n \geq 0 \Rightarrow I[0/p, 0/x]}
+\hypo{\{I[0/p, 0/x]\} \texttt{~p := 0~} \{ I[0/x] \}}
+\infer2{\{n \geq 0 \} \texttt{~p := 0~} \{ I[0/x] \}}
+\hypo{\{I[0/x]\} \texttt{~x := 0~} \{ I \}}
+\infer2{\{ n \geq 0 \} \texttt{~p := 0; x := 0~} \{ I \}}
+\end{prooftree}
+\]
+So we have the three open proof obligations for the rule of consequence:
+\begin{eqnarray*}
+n \geq 0 &\Rightarrow& I[0/p,0/x] \\
+I \wedge x < n &\Rightarrow& I[x+1/x, p+m/p] \\
+I \wedge x \geq n &\Rightarrow& p = n * m
+\end{eqnarray*}
+Can we find suitable I? In fact, we can use 
+\[ I:: p = x * m \wedge x \leq n \]
+which then results in the three statements:
+\begin{eqnarray*}
+n \geq 0 &\Rightarrow& 0 = 0 * m \wedge 0 \leq n \\
+p = p * m \wedge x \leq n \wedge x < n &\Rightarrow& p + m = (x + 1) * m \wedge x + 1 \leq n \\
+p = x * m \wedge x \leq n \wedge x \geq n &\Rightarrow& p = n * m
+\end{eqnarray*}
+which conveniently happens to work out. Basically, our example is, with the invariant inserted:
+\begin{lstlisting}[escapeinside={(*}{*)}]
+// { n \geq 0 }
+p := 0;
+x := 0;
+while x < n inv (*$p = x * m \wedge x \leq n$*) do
+  x := x + 1;
+  p := p + m
+// { p = n * m }
+\end{lstlisting}
+The invariant is saying that $p$ is $x$ times $m$ at every iteration, where $x$ is the iteration count. The loop terminates after $n$ iterations, leaving $p$ as $n$ times $m$, as required.
+
+\subsection*{Using Hoare Rules}
+Hoare rules are mostly syntax directed. That is, there is one rule you can apply to each statement. 
+
+In this course, our goal is to use Dafny to automate these proofs. What are the obstacles? There has to be some sort of answer to these three questions:
+\begin{itemize}[noitemsep]
+\item When to apply the rule of consequence?
+\item What invariant to use for while?
+\item How do you prove the implications involved in the rule of consequence?
+\end{itemize}
+
+Proving the implications, at least, is doable, using modern theorem provers. Loop invariants, though, are hard to come up with, so you'll be spending some time with that. Someone has to come up with them. For this course, it's you. In general, is it the programmer?
+
+\subsection*{Hoare Logic: Summary}
+We have a language for asserting properties of programs, and we know when these assertions are true. We also have a symbolic method for deriving assertions. This picture summarizes the situation.
+
+\includegraphics[width=\textwidth]{L12/everything.png}
+
+
+\section*{Answers: Completed Hoare triples} These are the strongest postconditions / weakest preconditions from before.
 
 \[
 \begin{array}{lll}

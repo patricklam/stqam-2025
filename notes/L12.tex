@@ -73,7 +73,7 @@ basicstyle=\ttfamily,commentstyle=\scriptsize\itshape,showstringspaces=false,bre
 
 \begin{document}
 
-\lecture{12 --- February 26, 2025}{Winter 2025}{Patrick Lam}{version 1}
+\lecture{12 --- February 26, 2025}{Winter 2025}{Patrick Lam}{version 2}
 
 We've seen this picture on the slides.
 
@@ -617,10 +617,10 @@ We have a language for asserting properties of programs, and we know when these 
   \{ \mathsf{~true~} \} & x := 5 &\{ x = 5 \} \\
   \{ x = y \} & x := x + 3 &\{ x = y + 3 \} \\
   \{ x * 2 > -1 \} & x := x * 2 + 3 &\{ x > 1 \} \\
-  \{ x = a \} & \mathsf{if~} x < 0 \mathsf{~then~} x := -x  &\{ x \leq 0 \Rightarrow x = -a ~\wedge~ x > 0 \Rightarrow x = a \} \\
-  \{ \mathsf{~false~} \} & x := 3  &\{ \mathsf{~true~} \} \\
+  \{ x = a \} & \mathsf{if~} x < 0 \mathsf{~then~} x := -x  &\{ a \leq 0 \Rightarrow x = -a ~\wedge~ a > 0 \Rightarrow x = a \} \\
+  \{ \mathsf{~false~} \} & x := 3  &\{ \mathsf{~false~} \} \\
   \{ x > 0 \} & \mathsf{while~} x \mathtt{!=~} 0 \mathsf{~do~} x := x - 1  &\{ x = 0 \} \\
-  \{ x > 0 \} & \mathsf{while~} x \mathtt{!=~} 0 \mathsf{~do~} x := x - 1 & \{ \mathsf{~true~} \} \\
+  \{ x > 0 \} & \mathsf{while~} x \mathtt{!=~} 0 \mathsf{~do~} x := x - 1 & \{ \mathsf{~false~} \} \\
 \end{array}
 \]
 

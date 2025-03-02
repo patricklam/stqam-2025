@@ -215,7 +215,7 @@ so as a reminder, $A[a/x]$ means $A$ with variable $x$ replaced by term $a$ (``s
   $\inferrule*{A}{A \vee B} \hspace*{1em} \inferrule*{B}{A \vee B}$ &
   $\inferrule*{A \rightarrow B \hspace*{2em} A}{B}$\\[2em]
 
-  $\inferrule*{A[e/x]}{\exists x. A}$ &
+  $\inferrule*{A[e/x]}{\exists x.~A}$ &
   $\inferrule*{\forall x.~A}{A[e/x]}$ &
   $\inferrule*[Right=$a \mathrm{~fresh}$]{A[a/x]}{\forall x.~A}$\\[2em]
   
@@ -223,6 +223,33 @@ so as a reminder, $A[a/x]$ means $A$ with variable $x$ replaced by term $a$ (``s
   \multicolumn{2}{c}{$\inferrule*[Right=$a \mathrm{~fresh}$]{\vdash \exists x.~A ~~~~ A[a/x] \vdash B}{\vdash B}$}
   \end{tabular}
 \end{center}
+
+Let's look at some of the less-obvious rules.
+\[
+\inferrule*{A[e/x]}{\exists x.~A}
+\]
+With our definition of substitution, this is saying that there is some term $e$ that we can substitute for free variable
+$x$ in $A$ that makes the resulting statement $A[e/x]$ (unconditionally) true. Hence, $\exists x.~A$; one possible value for $x$ is $e$ as exhibited. For instance, let $A$ be $z = 5$. This can't be true (``not even true''); $z$ is unbound. But if we let $e$ be 5 and $x$ be $z$, then $A[e/x]$ is $5 = 5$, which has no unbound variables and evaluates to true.
+Hence, $\exists z.~z = 5$.
+
+Skipping the rule for eliminating a universal quantifier, let's look at the next rule for universal introduction.
+\[\inferrule*[Right=$a \mathrm{~fresh}$]{A[a/x]}{\forall x.~A}\]
+So this is saying that if $A$ is true no matter what fresh value you substitute in for $x$, then $A$ is going to be true for all $x$.
+
+Last rule.
+\[
+  \inferrule*[Right=$a \mathrm{~fresh}$]{\vdash \exists x.~A ~~~~ A[a/x] \vdash B}{\vdash B}
+\]
+Here, the setup is that there is a sentence $A$ with some unbound $x$, and also some sentence $B$.
+If: (1) we know unconditionally that there does, in fact, exist some $x$ for which $A$ is true; and
+(2) from $A[a/x]$ (for all fresh $a$), we can infer $B$. Then: $B$ is unconditionally true.
+
+Another way I had of conceptualizing this is that (1) if there is an $A$ which tells us some statement $B$, but
+only if $A$ is not talking about the empty set; and (2) we show that there is at least one element in the set of
+things that $A$ is talking about; then (3) we can conclude $B$.
+
+I intend to put on the 2025 Quiz 2 a question where I ask you to list $A$ and $B$, but I'm not going
+to put an example in the notes. Show up to class on March 3 to hear an example.
 
 \subsection*{Inference rules for Hoare triples} We write $\vdash \{A\}~c~\{B\}$ when we can derive
 the triple using inference rules.

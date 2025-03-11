@@ -74,7 +74,7 @@ basicstyle=\ttfamily,commentstyle=\scriptsize\itshape,showstringspaces=false,bre
 
 \begin{document}
 
-\lecture{13 --- March 5, 2025}{Winter 2025}{Patrick Lam}{version 1}
+\lecture{13 --- March 5, 2025}{Winter 2025}{Patrick Lam}{version 1b}
 
 Today, we are going to start talking about Dafny, which is a tool for
 automatically verifying annotations in program code. As I've said
@@ -152,7 +152,7 @@ when it responds to queries. Quoting the post again:
 \end{itemize}
 So, authorization has to be explicitly granted by some specific policy, and if there is any forbid policy that affects a request, then access is forbidden.
 
-For instance, a request might be \textit{principal=}\textbf{User::``Alice"}, \textit{action=}\textbf{Action::``GetList"}, and \textit{resource=}\textbf{Action::``AliceList"}. Applying that to policy 1, we get expression \textbf{List::``AliceList" has owner \&\& List::``AliceList".owner == User::``Alice"}. This is probably going to be true, in which case the request \emph{satisfies} the policy. More generally, the authorization engine computes the request over all of its policies and returns an overall decision.
+For instance, a request might be \textit{principal=}\textbf{User::``Alice"}, \textit{action=}\textbf{Action::``GetList"}, and \textit{resource=}\textbf{List::``AliceList"}. Applying that to policy 1, we get expression \textbf{List::``AliceList" has owner \&\& List::``AliceList".owner == User::``Alice"}. This is probably going to be true, in which case the request \emph{satisfies} the policy. More generally, the authorization engine computes the request over all of its policies and returns an overall decision.
 
 \paragraph{Some Bad Code.} OK, let's look at some buggy Dafny code that tries to compute whether a request is authorized.
 \begin{lstlisting}[language=dafny]

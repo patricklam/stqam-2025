@@ -1,0 +1,117 @@
+\documentclass[11pt]{article}
+\usepackage{mathpartir}
+\usepackage{pifont}
+\usepackage{multicol}
+\usepackage{listings}
+\usepackage{pgf}
+\usepackage{tikz}
+\usepackage{alltt}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{dafny}
+\usetikzlibrary{arrows,automata,shapes,positioning}
+\tikzstyle{block} = [rectangle, draw, fill=blue!20, 
+    text width=5em, text centered, rounded corners, minimum height=2em]
+\tikzstyle{bt} = [rectangle, draw, fill=blue!20, 
+    text width=1em, text centered, rounded corners, minimum height=2em]
+\newcommand{\xmark}{\ding{55}}
+
+\newtheorem{defn}{Definition}
+\newtheorem{crit}{Criterion}
+\newcommand{\true}{\mbox{\sf true}}
+\newcommand{\false}{\mbox{\sf false}}
+
+\newcommand*\circled[1]{\tikz[baseline=(char.base)]{
+            \node[shape=circle,draw,inner sep=2pt] (char) {#1};}}
+
+
+\newcommand{\handout}[5]{
+  \noindent
+  \begin{center}
+  \framebox{
+    \vbox{
+      \hbox to 5.78in { {\bf Software Testing, Quality Assurance and Maintenance } \hfill #2 }
+      \vspace{4mm}
+      \hbox to 5.78in { {\Large \hfill #5  \hfill} }
+      \vspace{2mm}
+      \hbox to 5.78in { {\em #3 \hfill #4} }
+    }
+  }
+  \end{center}
+  \vspace*{4mm}
+}
+
+\newcommand{\lecture}[4]{\handout{#1}{#2}{#3}{#4}{Lecture #1}}
+\topmargin 0pt
+\advance \topmargin by -\headheight
+\advance \topmargin by -\headsep
+\textheight 8.9in
+\oddsidemargin 0pt
+\evensidemargin \oddsidemargin
+\marginparwidth 0.5in
+\textwidth 6.5in
+
+\parindent 0in
+\parskip 1.5ex
+%\renewcommand{\baselinestretch}{1.25}
+
+\usepackage{enumitem}
+
+\newtheorem{prop}{Proposition}
+\newtheorem{lemma}{Lemma}
+\usepackage{ebproof}
+\newcommand{\qedsymbol}{\rule{1ex}{1ex}}
+\newcommand{\sem}[3]{\langle #1, #2 \rangle \Downarrow #3}
+
+\lstset{ %
+language=Java,
+basicstyle=\ttfamily,commentstyle=\scriptsize\itshape,showstringspaces=false,breaklines=true,numbers=left}
+
+%\usepackage{fontspec}
+%\setmonofont{Cousine}[Scale=MatchLowercase]
+
+\begin{document}
+
+\lecture{14 --- March 10, 2025}{Winter 2025}{Patrick Lam}{version 1}
+
+Other applications of verified software besides Cedar:
+\begin{itemize}[noitemsep]
+\item Paris Metro line 14 control system (B)\footnote{\url{https://www.clearsy.com/wp-content/uploads/2020/03/Formal-methods-for-Railways-brochure-mai-2020.pdf}}: 110,000 lines of models, 86,000 lines of Ada.
+\item seL4 (Haskell, Isabelle/HOL, C)\footnote{\url{https://sel4.systems/Info/FAQ/proof.html}}: the seL4 microkernel conforms to its specification and maintains integrity and confidentiality.
+\item CompCert (Coq)\footnote{https://inria.hal.science/hal-01238879}: a formally verified optimizing compiler
+\item IronClad (Dafny)\footnote{https://www.microsoft.com/en-us/research/project/ironclad/}: guarantees about how remote apps behave
+\end{itemize}
+
+The first three applications were carried out by verification experts; the last one was done by systems programmers. In all of these cases, the systems were designed as verified systems from the start.
+
+\section*{Dafny}
+
+I don't know how long it will take, but in this set of lecture notes, we'll aim to get through
+the first online guide, which shows how to verify basic imperative code (including loops but not advanced
+topics like objects, sequences and sets, data structures, lemmas). I'm going to summarize what's
+there, and in class, we'll work on exercises together.
+
+\begin{itemize}[noitemsep]
+\item \url{https://dafny.org/dafny/OnlineTutorial/guide}
+\item \url{https://dafny.org/blog/2023/12/15/teaching-program-verification-in-dafny-at-amazon/}
+\end{itemize}
+
+\section*{Dafny: annotations}
+This annotation in Dafny should be familiar to you from what we've seen in class:
+\begin{lstlisting}[language=dafny]
+  forall k: int :: 0 <= k < a.Length ==> 0 < a[k]
+\end{lstlisting}
+or in ASCII,
+\begin{verbatim}
+  forall k: int :: 0 <= k < a.Length ==> 0 < a[k]
+\end{verbatim}
+It says that all elements of array $a$ are positive.
+
+Dafny proves user-specified annotations and verifies the absence of runtime errors---the things
+that are usually undefined behaviour or crashes, like out of bounds array indexes, null dereferences, etc.
+We've seen how to use symbolic execution to avoid these as well, but Dafny is a fully-static approach
+that aims to work on real code (written in the Dafny language).
+
+\end{document}

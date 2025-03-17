@@ -76,6 +76,14 @@ basicstyle=\ttfamily,commentstyle=\scriptsize\itshape,showstringspaces=false,bre
 
 \lecture{14 --- March 10, 2025}{Winter 2025}{Patrick Lam}{version 1}
 
+We motivated Dafny last time by talking about Cedar. In brief, Dafny
+proves user-specified annotations and verifies the absence of runtime
+errors---the things that are usually undefined behaviour or crashes,
+like out of bounds array indexes, null dereferences, etc.  We've seen
+how to use symbolic execution to avoid these as well, but Dafny is a
+fully-static approach that aims to work on real code (written in the
+Dafny language).
+
 Other applications of verified software besides Cedar:
 \begin{itemize}[noitemsep]
 \item Paris Metro line 14 control system (B)\footnote{\url{https://www.clearsy.com/wp-content/uploads/2020/03/Formal-methods-for-Railways-brochure-mai-2020.pdf}}: 110,000 lines of models, 86,000 lines of Ada.
@@ -109,9 +117,328 @@ or in ASCII,
 \end{verbatim}
 It says that all elements of array $a$ are positive.
 
-Dafny proves user-specified annotations and verifies the absence of runtime errors---the things
-that are usually undefined behaviour or crashes, like out of bounds array indexes, null dereferences, etc.
-We've seen how to use symbolic execution to avoid these as well, but Dafny is a fully-static approach
-that aims to work on real code (written in the Dafny language).
+Let's start Dafny and write a method that ensures this as a precondition.
+Can you fill this in on your computer, experimenting with how to make it verify?
+\begin{lstlisting}[language=dafny]
+  method all_positive() returns (rv:array<int>)
+  ensures forall k: int :: 0 <= k < rv.Length ==> 0 < rv[k]
+  {
+    var arr := new int[2];
+    // ...
+    return arr;
+  }  
+\end{lstlisting}
+
+\section*{Dafny: methods}
+We saw a method above. A \emph{method} is a piece of imperative, executable code.
+It's like a Java method, or a procedure or function in other languages. Dafny uses
+``function'' to mean something else. Here's another method declaration:
+\begin{lstlisting}[language=dafny]
+  method Abs(x:int) returns (y:int)
+  {
+    // ...
+  }
+\end{lstlisting}
+Dafny methods can return multiple values:
+\begin{lstlisting}[language=dafny]
+  method MultipleReturns(x:int, y:int) returns (more:int, less:int)
+  {
+    more := x + y;
+    less := x - y;
+  }
+\end{lstlisting}
+Note the use of ``:='' for assignment (and ``=='' for equality).
+
+Return variables are just like local variables and can be assigned multiple times.
+Parameters are read-only.
+
+Let's fill in the body of Abs.
+\begin{lstlisting}[language=dafny]
+  method Abs(x:int) returns (y:int)
+  {
+    if x < 0 { // must write the {
+        return -x;
+      } else {
+        return x;
+     }
+  }
+\end{lstlisting}
+
+\section*{Preconditions and postconditions}
+What's special about Dafny, of course, is that you can write \textsf{requires}
+and \textsf{ensures} clauses on methods, and Dafny will try to verify them, or
+complain. Let's add a postcondition to the Abs method.
+\begin{lstlisting}[language=dafny]
+method AbsWithPostcondition(x:int) returns (y:int)
+  ensures 0 < y
+{
+  if x < 0 {
+    return -x;
+  } else {
+    return x;
+  }
+}
+\end{lstlisting}
+Note that we use the name of the return value, \textsf{y}. Now, why doesn't this verify?
+
+We can write multiple postconditions as well.
+\begin{lstlisting}[language=dafny]
+  method MultipleReturns(x:int, y:int) returns (more:int, less:int)
+    ensures less < x
+    ensures x < more
+  {
+    more := x + y;
+    less := x - y;
+  }
+\end{lstlisting}
+OK, what goes wrong here? How can we verify this method?
+
+This doesn't help, but we can also write:
+\begin{lstlisting}[language=dafny]
+  method MultipleReturns(x:int, y:int) returns (more:int, less:int)
+    ensures less < x < more
+  {
+    more := x + y;
+    less := x - y;
+  }
+\end{lstlisting}
+
+There are two reasons why Dafny can't prove something.
+(1) it's ``too hard'' for Dafny and Boogie/Z3 to prove; (2)
+it's actually not true. Test cases can help with (2).
+The other thing you will need, in general, is invariants.
+
+So, of course \textsf{less $<$ x} isn't true if \textsf{y} is negative.
+Let's make sure that it's impossible to call \textsf{MultipleReturns}
+in that case.
+\begin{lstlisting}[language=dafny]
+  method MultipleReturns(x:int, y:int) returns (more:int, less:int)
+    requires y >= 0
+    ensures less < x < more
+  {
+    more := x + y;
+    less := x - y;
+  }
+\end{lstlisting}
+You can also write more than one requires clause. OK, here's an exercise.
+
+\paragraph{Exercise 0.} Write a method \textsf{Max} that takes two
+integer parameters and returns their maximum. Add appropriate annotations
+and make sure your code verifies.
+
+\begin{lstlisting}[language=dafny]
+  method Max(a: int, b: int) returns (c: int)
+    // write a postcondition
+  {
+    // write code
+  }
+\end{lstlisting}
+
+\section*{Assertions}
+We can put assertions anywhere, for instance:
+\begin{lstlisting}[language=dafny]
+  method TryingOutAssertions() {
+    assert 2 < 3;
+    // what about asserting something not true?
+  }
+\end{lstlisting}
+Assertions are especially helpful for debugging Dafny, because it tries to prove that they hold
+on all executions. So if you think that Dafny knows something, write it as an assertion and see
+if it does or not.
+
+Local variables are useful, including for assertions.
+\begin{lstlisting}[language=dafny]
+  method m()
+  {
+    var x, y, z: bool := 1, 2, true;
+  }
+\end{lstlisting}
+Dafny infers types for local variables, or you can explicitly specify them. Using variables:
+\begin{lstlisting}[language=dafny]
+  method TestAbsWithPostcondition(){
+    var v := AbsWithPostcondition(3);
+    assert 0 <= v;
+  }
+\end{lstlisting}
+
+\paragraph{Exercise 1.} Write a test method that calls your \textsf{Max} method from Exercise 0
+and then asserts something about the result.
+
+But what about:
+\begin{lstlisting}[language=dafny]
+  method AbsWithPostcondition(x:int) returns (y:int)
+  ensures 0 <= y
+  {
+    if x < 0 {
+      return -x;
+    } else {
+      return x;
+    }
+  }
+
+  method TestAbs()
+  {
+    var v := AbsWithPostcondition(3);
+    assert 0 <= v;
+    assert v == 3; // oops, can't prove this
+  }
+\end{lstlisting}
+Looking at \textsf{AbsWithPostcondition}, clearly \textsf{v} is 3 if we use the body of that method.
+But Dafny doesn't know that. It just looks at the postcondition. From the postcondition, it knows
+that \textsf{v} is non-negative, but not exactly what it is.
+
+Indeed, Dafny doesn't know the difference between \textsf{AbsWithPostcondition} and:
+\begin{lstlisting}[language=dafny]
+  method NotAbs(x:int) returns (y:int)
+  ensures 0 <= y
+  {
+    return 5;
+  }
+\end{lstlisting}
+and it also can't prove this:
+\begin{lstlisting}[language=dafny]
+  method TestNotAbs(x:int) returns (y:int)
+  ensures 0 <= y
+  {
+    var v := NotAbs(3);
+    assert v == 3; // actually not true
+  }
+\end{lstlisting}
+So what postcondition do we want? How about this?
+\begin{lstlisting}[language=dafny]
+  method AbsBetterPostcondition(x:int) returns (y:int)
+  ensures 0 <= y
+  ensures 0 <= x ==> y == x
+  {
+    if x < 0 {
+      return -x;
+    } else {
+      return x;
+    }
+  }
+\end{lstlisting}
+Well\ldots
+\begin{lstlisting}[language=dafny]
+  method TestAbsBetter(x:int) returns (y:int)
+  {
+    var v := AbsBetterPostcondition(5);
+    assert v == 5;
+    var w := AbsBetterPostcondition(-2);
+    assert w == 2;
+  }
+\end{lstlisting}
+OK, one way to write the postcondition we really want is:
+\begin{lstlisting}[language=dafny]
+  method AbsFullPostcondition(x:int) returns (y:int)
+  ensures 0 <= y
+  ensures 0 <= x ==> y == x
+  ensures x < 0 ==> y == -x
+  {
+    if x < 0 {
+      return -x;
+    } else {
+      return x;
+    }
+  }
+\end{lstlisting}
+Or we can write:
+\begin{lstlisting}[language=dafny]
+  ensures 0 <= y && (y == x || y == -x)
+\end{lstlisting}
+There can be more than one way to write a postcondition.
+
+Now, we want to eliminate the redundancy between the postcondition and the implementation.
+Functions can help here. But, first, some exercises.
+
+\paragraph{Exercise 2.} Using a precondition, change \textsf{Abs} such that it can only be called
+on negative values. Simplify the body of \textsf{Abs} into just one return statement and make sure
+the method still verifies.
+
+\paragraph{Exercise 3.} Keeping the postconditions of \textsf{Abs} the same as for
+\textsf{AbsFullPostcondition}, change the body of the method to just \textsf{y := x + 2}. What
+precondition do you need to impose on the method so that it verifies? What about body
+\textsf{y := x + 1}? What does that precondition say about when you can call the method?
+
+% requires x == -1
+% requires false
+
+\section*{Functions}
+
+Here is a function. A function body must consist of exactly one expression with the correct type.
+\begin{lstlisting}[language=dafny]
+  function abs(x:int) : int
+  {
+    if x < 0 then -x else x
+  }
+\end{lstlisting}
+
+Why functions? They can be used directly in specifications (e.g. asserts, requires, ensures). Here, look.
+\begin{lstlisting}[language=dafny]
+  method m()
+  {
+    assert abs(3) == 3;
+  }
+\end{lstlisting}
+We don't need to store the result of function \textsf{abs} in a temporary local variable, nor did we have
+to write a postcondition for it. Dafny doesn't forget about the function body. It is allowed to write
+preconditions and postconditions for functions, but not required.
+
+\paragraph{Exercise 4.} Write a function \textsf{max} that returns the larger of two integer parameters.
+Write a test method using an \textsf{assert} that checks that your function is correct (at least on one
+case).
+
+\paragraph{Exercise 5.} Change the postcondition of method \textsf{Abs} to use function \textsf{abs}, make sure
+that \textsf{Abs} still verifies, and then change the body of \textsf{Abs} to also use the function.
+
+Let's continue using functions. Here is a na\"ive implementation of the Fibonacci function.
+
+\begin{lstlisting}[language=dafny]
+function fib(n: nat): nat
+{
+  if n == 0 then 0
+  else if n == 1 then 1
+  else fib(n-1) + fib(n-2)
+}
+\end{lstlisting}
+
+Some notes. (1) We had \textsf{int}s before, but now we have
+\textsf{nat}s, i.e. natural numbers, which can't be negative; these
+are a subset type of \textsf{int}. (By the way, Dafny \textsf{int}s
+and \textsf{nat}s are unbounded.) (2) You wouldn't actually want to
+\emph{calculate} Fibonacci numbers this way, but it obviously matches
+the definition, and we can ask Dafny to prove that a (faster) implementation
+also computes the same thing as this function.
+
+\begin{lstlisting}[language=dafny]
+method ComputeFib(n: nat) returns (b: nat)
+  ensures b == fib(n)
+{
+  // ...
+}
+\end{lstlisting}
+
+\section*{Loops and Loop Invariants}
+The usual more efficient way to compute Fibonacci numbers is using a loop. We've talked
+about loops in the context of Hoare logic, and Dafny is similar, except that it does a lot of
+proving for you. But it doesn't supply invariants.
+
+Here's a loop, with an invariant.
+\begin{lstlisting}[language=dafny]
+method FirstLoop(n:nat)
+{
+  var i := 0;
+  while i < n
+    invariant 0 <= i
+  {
+    i := i + 1;
+  }
+}
+\end{lstlisting}
+We can see that $\mathsf{i == n}$ at the end of the loop, but does Dafny know that? We can ask it, using
+\textsf{assert}. (It doesn't). We need to strengthen the loop invariant. If we try $0 \leq i < n$, then
+Dafny complains that the invariant might not hold on entry and it might not be maintained by the loop body.
+Why is that?
+
+Well, in any case, if we use the invariant $i \leq i \leq n$, then Dafny is satisfied with everything.
 
 \end{document}

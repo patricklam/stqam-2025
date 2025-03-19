@@ -74,7 +74,7 @@ basicstyle=\ttfamily,commentstyle=\scriptsize\itshape,showstringspaces=false,bre
 
 \begin{document}
 
-\lecture{14 --- March 10, 2025}{Winter 2025}{Patrick Lam}{version 2}
+\lecture{14 --- March 10, 2025}{Winter 2025}{Patrick Lam}{version 3}
 
 We motivated Dafny last time by talking about Cedar. In brief, Dafny
 proves user-specified annotations and verifies the absence of runtime
@@ -447,6 +447,79 @@ Does the assertion $i == n$ after the loop still verify?
 
 \paragraph{Exercise 7.} With the original loop invariant, change the loop guard from $i < n$ to
 $i \neq n$. Do the loop and assertion after the loop still verify? Why or why not?
+
+Here is another loop, which implements multiplication using addition.
+\begin{lstlisting}[language=dafny]
+method AddByInc(n:nat, m:nat) returns (r:nat)
+  ensures r == n + m
+{
+  r := n;
+  var i := 0;
+  while (i < m)
+  {
+    i := i + 1;
+    r := r - 1;
+  }
+}
+\end{lstlisting}
+
+Turns out that we need to add two invariants for the while:
+\begin{lstlisting}[language=dafny]
+    invariant 0 <= i <= m;
+    invariant r == n + i;
+\end{lstlisting}
+These are similar invariants to what we've seen in Hoare logic, but it's easier to experiment with them here and see exactly what we need and when Dafny complains.
+The second invariant really is an invariant. We can express it as $n = r - i$. The loop doesn't modify $n$. So, as $i$ goes up, $r$ goes down by the same amount.
+
+We can also check some assertions at the end to see what Dafny actually knows:
+\begin{lstlisting}[language=dafny]
+  assert (r == n + i && i == m);
+  assert (r == n + m);
+\end{lstlisting}
+
+Here's a method that multiplies two numbers by addition.
+\begin{lstlisting}[language=dafny]
+method Product(m:nat, n:nat) returns (res:nat)
+  ensures res == m*n
+{
+  var m1 := m;
+  res := 0;
+  while m1 != 0
+  {
+    var n1 := n;
+    while n1 != 0
+    {
+      res := res + 1;
+      n1 := n1 - 1;
+    }
+    m1 := m1 - 1;
+  }
+}
+\end{lstlisting}
+We need invariants for both \textsf{while} loops. We can start with the outer loop.
+We could write an invariant about the range of \textsf{m1} but it turns out that this is not
+mandatory. The invariant that actually is mandatory is about the value of \textsf{res}.
+It looks like magic, but you can examine the postcondition and the fact that \textsf{m1}
+is the induction variable here, and conclude that your invariant should be:
+\begin{lstlisting}[language=dafny]
+  invariant res == (m-m1) * n
+\end{lstlisting}
+When the loop starts, it has gone around the loop zero times, so
+$\mathsf{m} == \mathsf{m1}$ and their difference is 0, as is
+$\mathsf{res}$.  In terms of maintaining the invariant, each time around
+the outer loop, the program is adding one \textsf{n} to $\mathsf{res}$
+and subtracting 1 from \textsf{m1}, and the invariant does that.
+
+As for the second invariant, we are now doing the adding of \textsf{n} to \textsf{res} one at a time.
+Through this loop, \textsf{m} and \textsf{m1} are both constant, and we are changing \textsf{res}
+from $(\mathsf{m}-\mathsf{m1}) \times n$ to $(\mathsf{m}-\mathsf{m1}) + 1 \times n$. We have that \textsf{n} stays constant
+and \textsf{n1} goes down. Every time that \textsf{n1} goes down by 1, \textsf{res} goes up by 1,
+so putting $-\mathsf{n1}$ is a good bet.
+The invariant is thus
+\begin{lstlisting}
+  invariant res == (m-m1)*n + (n-n1)
+\end{lstlisting}
+and Dafny will verify this.
 
 Let's implement the Fibonacci method.
 \begin{lstlisting}[language=dafny]

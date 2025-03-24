@@ -188,6 +188,22 @@ method FirstLoop(n:nat)
 
 // Monday stop point
 
+method AddByInc(n:nat, m:nat) returns (r:nat)
+  ensures r == n + m
+{
+  r := n;
+  var i := 0;
+  while (i < m)
+    invariant 0 <= i <= m;
+    invariant r == n + i;
+  {
+    i := i + 1;
+    r := r - 1;
+  }
+  assert (r == n + i && i == m);
+  assert (r == n + m);
+}
+
 function fib(n:nat): nat
 {
 	if n == 0 then 0

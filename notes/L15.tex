@@ -74,7 +74,7 @@ basicstyle=\ttfamily,commentstyle=\scriptsize\itshape,showstringspaces=false,bre
 
 \begin{document}
 
-\lecture{15 --- March 24, 2025}{Winter 2025}{Patrick Lam}{version 2}
+\lecture{15 --- March 24, 2025}{Winter 2025}{Patrick Lam}{version 3}
 
 We'll work through some more examples from the \textsf{stqam-1251-dafny} repo, which you can find at
 \url{https://git.uwaterloo.ca/stqam-1251/dafny}.
@@ -341,28 +341,30 @@ So we're assigning $x \times y$ to $y$, i.e. storing an extra factor of $x$ here
 that we've stored.
 
 Dafny now has test cases, so let's also run a few test cases to convince ourselves that this implementation works.
-It can be useful to do that before we try to prove something that turns out to be not true.
+It can be useful to do that before we try to prove something that turns out to be not true. Instead of \textsf{assert},
+which is statically verified, we use \textsf{expect} to write what we expect (shout-out to Kieran for finding this; the documentation on Dafny tests
+is hard to find.)
 
   \begin{minipage}{.45\textwidth}
 \begin{lstlisting}[language=dafny]
 method {:test} TestExpBaseCases()
 {
   var res1 := exp_by_sqr(17.0, 0);
-  assert res1 == 1.0;
+  expect res1 == 1.0;
   var res2 := exp_by_sqr(2.2, 1);
-  assert res2 == 2.2;
+  expect res2 == 2.2;
   var res3 := exp_by_sqr(0.0, 11);
-  assert res3 == 0.0;
+  expect res3 == 0.0;
 }
 
 method {:test} TestExpEven()
 {
   var res1 := exp_by_sqr(1.0, 4);
-  assert res1 == 1.0;
+  expect res1 == 1.0;
   var res2 := exp_by_sqr(2.0, 4);
-  assert res2 == 16.0;
+  expect res2 == 16.0;
   var res3 := exp_by_sqr(3.0, 2);
-  assert res3 == 9.0;
+  expect res3 == 9.0;
 }
 \end{lstlisting}
 \end{minipage}
@@ -371,18 +373,18 @@ method {:test} TestExpEven()
 method {:test} TestExpOdd()
 {
   var res1 := exp_by_sqr(1.0, 5);
-  assert res1 == 1.0;
+  expect res1 == 1.0;
   var res2 := exp_by_sqr(2.0, 5);
-  assert res2 == 32.0;
+  expect res2 == 32.0;
   var res3 := exp_by_sqr(3.0, 3);
-  assert res3 == 27.0;
+  expect res3 == 27.0;
 }
 \end{lstlisting}
   \end{minipage}
 
 We can run these test cases. Here I run them on a version of the program that I've verified, but
 you can also run tests on not-yet-verified code if you annotate relevant methods with
-\textsf{\{:verify false\}} and call \textsf{dafny test -{}-allow-warnings}.
+\textsf{\{:verify false\}} and call \textsf{dafny test -{}-allow-warnings -{}-no-verify}.
 \begin{verbatim}
 $ dafny test fast_exp.dfy
 

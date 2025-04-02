@@ -147,7 +147,7 @@ method {:test} TestPivot()
   expect pivot(threeB, threeB.Length, 1) == false;
   var a := new int[] [3, 5, 9, 2, 11, 13, 15, 12];
   expect pivot(a, a.Length, 0) == true;
-  // a[3] > a[1], so false:
+  // a[3] < a[1], so false:
   expect pivot(a, a.Length, 2) == false;
   expect pivot(a, a.Length, 3) == true;
 }

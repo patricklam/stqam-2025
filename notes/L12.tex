@@ -73,7 +73,7 @@ basicstyle=\ttfamily,commentstyle=\scriptsize\itshape,showstringspaces=false,bre
 
 \begin{document}
 
-\lecture{12 --- February 26, 2025}{Winter 2025}{Patrick Lam}{version 3}
+\lecture{12 --- February 26, 2025}{Winter 2025}{Patrick Lam}{version 4}
 
 We've seen this picture on the slides.
 
@@ -452,7 +452,7 @@ the negation of the loop condition holds (which allows us to exit).
 \begin{prooftree}
   \hypo{\mathrm{Pre} \Rightarrow \mathrm{Inv}}
   \hypo{\{ \mathrm{Inv} \wedge b \} ~s~ \{ \mathrm{Inv} \}}
-  \hypo{\{ \mathrm{Inv} \wedge \neg b \} ~s~ \{ \mathrm{Post} \}}
+  \hypo{ \mathrm{Inv} \wedge \neg b \Rightarrow \mathrm{Post} }
   \infer3{\{ \mathrm{Pre} \} ~\texttt{while $b$ do $s$}~ \{ \mathrm{Post} \}}
 \end{prooftree}
 \]
